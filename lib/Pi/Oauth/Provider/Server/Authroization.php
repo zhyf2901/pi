@@ -108,7 +108,8 @@ class Authorization extends AbstractServer
 
         // Make sure a valid redirect_uri must match the clientData URI.
         // @see http://tools.ietf.org/html/rfc6749#section-3.1.2
-        if ($redirectUri && !empty($clientData['redirect_uri']) && $redirectUri != $clientData['redirect_uri']) {
+        $redirectUri = $this->validateRedirectUri($redirectUri, $clientData['redirect_uri']);
+        if (!$redirectUri) {
             $this->setError('invalid_request');
             return false;
         }
@@ -128,7 +129,7 @@ class Authorization extends AbstractServer
         $params = array(
             'client_id'     => $clientId,
             'response_type' => $responseType,
-            'redirect_uri'  => $redirectUri ?: $clientData['redirect_uri'],
+            'redirect_uri'  => $redirectUri,
             'scope'         => $scopeRequested->getScope(),
             'state'         => $state,
         );
@@ -190,5 +191,33 @@ class Authorization extends AbstractServer
             . ((isset($parseUrl["query"])) ? "?" . $parseUrl["query"] : "")
             . ((isset($parseUrl["fragment"])) ? "#" . $parseUrl["fragment"] : "")
         ;
+    }
+
+    /**
+     * Validates redirect_uri
+     *
+     * @see http://tools.ietf.org/html/rfc6749#section-3.1.2
+     */
+    protected function validateRedirectUri($redirectUriRequested, $redirectUriRegistered)
+    {
+        if (!$redirectUriRequested && !$redirectUriRegistered) {
+            return false;
+        }
+        if (!$redirectUriRequested && !is_scalar($redirectUriRegistered)) {
+            return false;
+        }
+        if (!$redirectUriRegistered) {
+            return $redirectUriRequested;
+        }
+        if (!$redirectUriRequested) {
+            return $redirectUriRegistered;
+        }
+        $redirectUriRegistered = (array) $redirectUriRegistered;
+        foreach ($redirectUriRegistered as $uri) {
+            if (sub_str($redirectUriRequested, 0, stlen($uri)) == $uri) {
+                return $redirectUriRequested;
+            }
+        }
+        return false;
     }
 }

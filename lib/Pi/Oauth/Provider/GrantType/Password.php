@@ -1,7 +1,7 @@
 <?php
 namespace Pi\Oauth\Provider\GrantType;
 
-use Pi\Oauth\Service;
+use Pi\Oauth\Provider\Service;
 
 class Password extends AbstractGrantType
 {

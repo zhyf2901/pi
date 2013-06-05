@@ -3,13 +3,10 @@ namespace Pi\Oauth\Provider\TokenType;
 
 use Pi\Oauth\Provider\Service;
 use Pi\Oauth\Provider\Http\Request;
-//use Pi\Oauth\Provider\Result;
 
 class Bearer extends AbstractTokenType
 {
     protected $identifier = 'bearer';
-
-    //protected $isHeader;
 
     /**
      * This is a convenience function that can be used to get the token, which can then
@@ -22,8 +19,6 @@ class Bearer extends AbstractTokenType
      *
      * NB: Resource servers MUST accept tokens via the Authorization scheme
      * (http://tools.ietf.org/html/rfc6750#section-2).
-     *
-     * @todo Should we enforce TLS/SSL in this function?
      *
      * @see http://tools.ietf.org/html/rfc6750#section-2.1
      * @see http://tools.ietf.org/html/rfc6750#section-2.2
@@ -55,7 +50,6 @@ class Bearer extends AbstractTokenType
                 return null;
             }
             $tokenParam = $matches[1];
-            //$this->isHeader = true;
 
         } elseif ($request->getPost('access_token')) {
             // POST: Get the token from POST data

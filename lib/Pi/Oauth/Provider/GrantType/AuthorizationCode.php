@@ -1,7 +1,7 @@
 <?php
 namespace Pi\Oauth\Provider\GrantType;
 
-use Pi\Oauth\Service;
+use Pi\Oauth\Provider\Service;
 
 class AuthorizationCode extends AbstractGrantType
 {
@@ -42,13 +42,10 @@ class AuthorizationCode extends AbstractGrantType
          * @uri - http://tools.ietf.org/html/rfc6749#section-4.1.3
          */
         if (!empty($codeData['redirect_uri'])) {
-            if (!$request->request('redirect_uri') || urldecode($request->request('redirect_uri')) != $tokenData['redirect_uri']) {
+            if (!$request->request('redirect_uri') || urldecode($request->request('redirect_uri')) != $codeData['redirect_uri']) {
                 $this->setError('invalid_grant');
                 return false;
             }
-        } elseif (!$request->request('redirect_uri')) {
-            $this->setError('invalid_grant');
-            return false;
         }
 
         return true;

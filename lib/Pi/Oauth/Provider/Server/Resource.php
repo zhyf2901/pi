@@ -20,11 +20,7 @@ class Resource extends AbstractServer
     public function setConfig(array $config)
     {
         if (isset($config['token_type'])) {
-            if (is_scalar($config['token_type'])) {
-                $this->setTokenType($config['token_type']);
-            } else {
-                $this->setTokenType($config['token_type']['name'], $config['token_type']['config']);
-            }
+            $this->setTokenType($config['token_type']);
             unset($config['token_type']);
         }
 
@@ -67,22 +63,23 @@ class Resource extends AbstractServer
             return false;
         }
 
-        if (!$tokenParam) { // Access token was not provided
+        // Access token was not provided
+        if (!$tokenParam) {
             $this->setError('invalid_request');
             return false;
         }
 
         // Get the stored token data
-        $token = Service::storage('access_token')->get($tokenParam);
-        if (!$token) {
+        $tokenData = Service::storage('access_token')->get($tokenParam);
+        if (!$tokenData) {
             $this->setError('invalid_token', 'The access token provided is invalid');
             return false;
         }
 
         // Check scope, if provided
         // If token doesn't have a scope, it's null/empty, or it's insufficient, then throw an error
-        if (!empty($token['scope'])) {
-            $grantedScope = Service::scope($token['scope']);
+        if (!empty($tokenData['scope'])) {
+            $grantedScope = Service::scope($tokenData['scope']);
             $requiredScope = Service::scope($scope);
             if (!$grantedScope->hasScope($requiredScope)) {
                 $this->setError('insufficient_scope');

@@ -5,7 +5,6 @@ use Pi;
 use Pi\Oauth\Provider\Server\AbstratServer;
 use Pi\Oauth\Provider\Storage\AbstractStorage;
 use Pi\Oauth\Provider\Storage\ModelInterface;
-//use Pi\Oauth\Provider\Storage\Model\LoaderInterface;
 use Pi\Oauth\Provider\GrantType\AbstractGrantType;
 use Pi\Oauth\Provider\ResponseType\AbstractResponseType;
 use Pi\Oauth\Provider\TokenType\AbstratTokenType;
@@ -68,17 +67,20 @@ class Service
      *          - grant
      *              * grant_types[]
      *          - resource
+     *              * token_type
      *              * www_realm
      *      + storage
      *          - model_set
+     *              * name
+     *              * config
+     *          - authorization_code
+     *              * expires_in
+     *              * length
      *          - access_token
      *              * expires_in
      *              * length
      *              * token_type
      *          - refresh_token
-     *              * expires_in
-     *              * length
-     *          - authorization_code
      *              * expires_in
      *              * length
      *
@@ -96,8 +98,8 @@ class Service
         if (is_string($config)) {
             $config = (array) include $config;
         }
-        if (!isset($config['model_set'])) {
-            $config['model_set'] = function ($identifier)
+        if (!isset($config['storage']['model_set'])) {
+            $config['storage']['model_set'] = function ($identifier)
             {
                 return Pi::model($identifier, 'oauth');
             };
@@ -110,7 +112,7 @@ class Service
         if (isset(static::$config[$section]) && isset(static::$config[$section][$identifier])) {
             return static::$config[$section][$identifier];
         }
-        return array();
+        return null;
     }
 
     public static function server($identifier)
@@ -118,7 +120,7 @@ class Service
         $key = __FUNCTION__ . '-' . $identifier;
         if (!isset(static::$registry[$key])) {
             $class = __NAMESPACE__ . '\\Server\\' . static::canonizeName($identifier);
-            static::$registry[$key] = new $class(static::config('servier', $identifier));
+            static::$registry[$key] = new $class(static::config('server', $identifier));
         }
 
         return static::$registry[$key];
@@ -134,7 +136,15 @@ class Service
                 if ($modelSet instanceof \Closure) {
                     $model = $modelSet($identifier);
                 } else {
+                    $config = array();
+                    if (is_array($modelSet)) {
+                        $config = $modelSet['config'];
+                        $modelSet = $modelSet['name'];
+                    }
                     $classLoader = __NAMESPACE__ . '\\Storage\\Model\\' . ucfirst($modelSet) . '\\Loader';
+                    if ($config) {
+                        $classLoader::setConfig($config);
+                    }
                     $model = $classLoader::load($identifier);
                 }
             }
@@ -246,3 +256,53 @@ class Service
         static::$registry[$key] = $resourceOwner;
     }
 }
+
+/**
+ * Demo for configs
+ */
+/*
+$config = array(
+    'server'    => array(
+        'authorization' => array(
+            'response_types'    => array(
+                'code', 'token',
+            ),
+        ),
+        'grant' => array(
+            'grant_types'   => array(
+                'authorization_code'    => 'AuthorizationCode',
+                'password'              => 'Password',
+                'client_credentials'    => 'ClientCredentials',
+                'refresh_token'         => 'RefreshToken',
+                'urn:ietf:params:oauth:grant-type:jwt-bearer'
+                                        => 'JwtBearer',
+            ),
+        ),
+        'resource'  => array(
+            'token_type'    => 'bearer',
+            'www_realm'     => 'service',
+        ),
+    ),
+    'storage'   => array(
+        'model_set'             => array(
+            'name'      => 'database',
+            'config'    => array(
+                'table_prefix'  => 'oauth',
+            ),
+        ),
+        'authorization_code'    => array(
+            'expires_in'    => 30,
+            'length'        => 40,
+        ),
+        'access_token'  => array(
+            'token_type'    => 'bearer',
+            'expires_in'    => 3600,
+            'length'        => 40,
+        ),
+        'refresh_token' => array(
+            'expires_in'    => 1209600,
+            'length'        => 40,
+        ),
+    ),
+);
+*/
