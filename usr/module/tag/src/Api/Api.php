@@ -54,7 +54,7 @@ class Api extends AbstractApi
     }
 
     /**
-     * Render a tag
+     * Get url to a tag
      *
      * @param string $tag
      * @param string $module
@@ -62,7 +62,7 @@ class Api extends AbstractApi
      *
      * @return string
      */
-    public function render($tag, $module = null, $type = '')
+    public function url($tag, $module = null, $type = '')
     {
         if (null === $module) {
             $module = Pi::service('module')->current();
@@ -79,7 +79,23 @@ class Api extends AbstractApi
                 $params['type'] = $type;
             }
         }
-        $url    = Pi::service('url')->assemble('default', $params);
+        $url = Pi::service('url')->assemble('default', $params);
+
+        return $url;
+    }
+
+    /**
+     * Render a tag
+     *
+     * @param string $tag
+     * @param string $module
+     * @param string $type
+     *
+     * @return string
+     */
+    public function render($tag, $module = null, $type = '')
+    {
+        $url    = $this->url($tag, $module, $type);
         $html   = '<a href="' . $url . '" title="' . _escape($tag)
                 . '" target="_blank">' . _escape($tag) . '</a>';
 
@@ -91,7 +107,7 @@ class Api extends AbstractApi
      *
      * @param string     $module Module name
      * @param string|array     $item   Item identifier
-     * @param string     $type   Item type
+     * @param string     $type   Item type, default as ''
      * @param bool
      *
      * @return string[]
@@ -108,8 +124,8 @@ class Api extends AbstractApi
         ));
         foreach ($rowset as $row) {
             $result[$row['item']][] = $render
-                ? $this->render($row['tag'], $module, $type)
-                : $row['tag'];
+                ? $this->render($row['term'], $module, $type)
+                : $row['term'];
         }
         if (is_scalar($item)) {
             if (isset($result[$item])) {
@@ -137,7 +153,6 @@ class Api extends AbstractApi
     {
         $time = $time ?: time();
         $tags = $this->canonize($tags);
-
         if (!$tags) {
             return true;
         }
@@ -148,9 +163,9 @@ class Api extends AbstractApi
 
         $rowset = $modelTag->select(array('term' => $tags));
         $tagsExist = array();
-        array_walk($rowset, function ($row) use (&$tagsExist) {
+        foreach ($rowset as $row) {
             $tagsExist[$row->term] = $row->toArray();
-        });
+        }
 
         foreach ($tags as $index => $tag) {
             if (!isset($tagsExist[$tag])) {
@@ -163,7 +178,7 @@ class Api extends AbstractApi
 
             // Insert data to link table
             $row = $modelLink->createRow(array(
-                'tag'       => $tag,
+                'term'      => $tag,
                 'module'    => $module,
                 'type'      => $type,
                 'item'      => $item,
@@ -174,18 +189,18 @@ class Api extends AbstractApi
         }
 
         $rowset = $modelStats->select(array(
-            'tag'       => $tags,
+            'term'      => $tags,
             'module'    => $module,
             'type'      => $type,
         ));
         $statsExist = array();
-        array_walk($rowset, function ($row) use (&$statsExist) {
-            $statsExist[$row->tag] = $row->toArray();
-        });
+        foreach ($rowset as $row) {
+            $statsExist[$row->term] = $row->toArray();
+        }
         foreach ($tags as $tag) {
             if (!isset($statsExist[$tag])) {
                 $row = $modelStats->createRow(array(
-                    'tag'       => $tags,
+                    'term'      => $tag,
                     'module'    => $module,
                     'type'      => $type,
                     'count'     => 0,
@@ -195,7 +210,7 @@ class Api extends AbstractApi
         }
 
         $modelTag->increment('count', array('term' => $tags));
-        $modelStats->increment('count', array('tag' => $tags));
+        $modelStats->increment('count', array('term' => $tags));
 
         return true;
     }
@@ -205,7 +220,7 @@ class Api extends AbstractApi
      *
      * @param string       $module Module name
      * @param string       $item   Item identifier
-     * @param string       $type   Item type
+     * @param string       $type   Item type, default as ''
      * @param array|string $tags   Tags to add
      * @param int          $time   Time adding new tags
      *
@@ -223,13 +238,13 @@ class Api extends AbstractApi
         if ($tagsDelete) {
             $where = array(
                 'item'      => $item,
-                'tag'       => $tagsDelete,
+                'term'      => $tagsDelete,
                 'module'    => $module,
                 'type'      => $type,
             );
             Pi::model('link', $this->module)->delete($where);
             $where = array(
-                'tag'       => $tagsDelete,
+                'term'      => $tagsDelete,
                 'module'    => $module,
                 'type'      => $type,
             );
@@ -275,23 +290,33 @@ class Api extends AbstractApi
     /**
      * Get list of items having a tag
      *
-     * @param string       $module Module name
-     * @param string       $tag    Tag
+     * @param string $tag    Tag
+     * @param string $module Module name
      * @param string|null  $type   Item type, null for all types
      * @param int          $limit  Limit
      * @param int          $offset Offset
      *
-     * @return int[]
+     * @return array
      */
-    public function getList($module, $tag, $type = null, $limit = 0, $offset = 0)
-    {
-        $where = array('module' => $module, 'tag' => $tag);
-        if (null !== $type) {
-            $where['type'] = $type;
+    public function getList(
+        $tag    = '',
+        $module = '',
+        $type   = '',
+        $limit  = 0,
+        $offset = 0
+    ) {
+        $where = array();
+        if ($module) {
+            $where['module'] = $module;
+            if (null !== $type) {
+                $where['type'] = $type;
+            }
+        }
+        if ($tag) {
+            $where['term'] = $tag;
         }
         $modelLink = Pi::model('link', $this->module);
         $select = $modelLink->select();
-        $select->columns(array('item' => new Expression('distinct item')));
         $select->where($where)->order('time DESC');
         if ($limit) {
             $select->limit($limit);
@@ -302,7 +327,7 @@ class Api extends AbstractApi
         $rowset = $modelLink->selectWith($select);
         $result = array();
         foreach($rowset as $row) {
-            $result[] = $row['item'];
+            $result[] = $row->toArray();
         }
 
         return $result;
@@ -311,17 +336,31 @@ class Api extends AbstractApi
     /**
      * Get count of items of having a tag
      *
-     * @param string       $module Module name
-     * @param string       $tag    Tag
-     * @param string|null  $type   Item type, null for all types
+     * @param string|array $tag    Tag or conditions
+     * @param string  $module Module name
+     * @param string $type   Item type
      *
      * @return int
      */
-    public function getCount($module, $tag, $type = null)
+    public function getCount($tag = '', $module = '', $type = '')
     {
-        $where = array('module' => $module, 'tag' => $tag);
-        if (null !== $type) {
-            $where['type'] = $type;
+         if (is_array($tag)) {
+            $where = $tag;
+        } elseif (!$module) {
+             $where = array();
+             if ($tag) {
+                 $where['term'] = $tag;
+             }
+         } else {
+            $where = array(
+                'module'    => $module,
+            );
+            if (null !== $type) {
+                $where['type'] = $type;
+            }
+             if ($tag) {
+                 $where['term'] = $tag;
+             }
         }
         $count = Pi::model('link', $this->module)->count($where);
 
@@ -329,32 +368,46 @@ class Api extends AbstractApi
     }
 
     /**
-     * Get matched tags for quick match
+     * Get matched host tags for quick match, for typeahead purpose
      *
      * @param string     $term   Term
      * @param int        $limit  Limit
-     * @param string     $module Module name, null for all modules
-     * @param string     $type   Item type, null for all types
+     * @param string     $module Module name
+     * @param string     $type   Item type
+     * @param string|array $order
      *
      * @return array
      */
-    public function match($term, $limit, $module = null, $type = null)
+    public function match($term, $limit = 5, $module = '', $type = '', $order = '')
     {
         $result = array();
-        $where = array();
-        if ($module) {
-            $where['module'] = $module;
+
+        $columns = array('term', 'count');
+        if (!$module) {
+            $model = Pi::model('tag', $this->module);
+            $where = array();
+        } else {
+            $model = Pi::model('stats', $this->module);
+            $where = array('module' => $module);
             if (null !== $type) {
                 $where['type'] = $type;
+            } else {
+                $columns = array(
+                    'term',
+                    'count' => new Expression('SUM(count)')
+                );
             }
         }
-        $where = Pi::db()->where($where);
-        $where->like('term', "{$term}%");
-        $model = Pi::model('tag', $this->module);
+
+        if (!$order) {
+            $order = array('count DESC', 'term ASC');
+        }
+        $where = Pi::db()->where($where)->like('term', "{$term}%");
         $select = $model->select()
+            ->columns($columns)
             ->where($where)
             ->limit($limit)
-            ->order('term ASC');
+            ->order($order);
         $rowset = $model->selectWith($select);
         foreach ($rowset as $row) {
             $result[] = $row['term'];
@@ -369,41 +422,44 @@ class Api extends AbstractApi
      * @param string $module Module name
      * @param string|null   $type   Item type
      * @param int   $limit  Return tag count
+     * @param int   $offset
      *
      * @return array
      */
-    public function top($module = null, $type = null, $limit = 0)
+    public function top($limit = 10, $module = '', $type = '', $offset)
     {
         $result = array();
+        $where = array();
+        $columns = array('term', 'count');
         if (!$module) {
-            $modelTag = Pi::model('tag', $this->module);
-            $select = $modelTag->select()->order('count DESC');
-            if ($limit) {
-                $select->limit($limit);
-            }
-            $rowset = $modelTag->selectWith($select);
+            $model = Pi::model('tag', $this->module);
         } else {
-            $modelLink = Pi::model('link', $this->module);
-            $select = $modelLink->select();
-            $select->columns(array(
-                'tag',
-                'count' => new Expression('count(*)')
-            ));
-            $select->order('count DESC');
-            if ($limit) {
-                $select->limit($limit);
-            }
+            $model = Pi::model('stats', $this->module);
             $where = array('module' => $module);
             if (null !== $type) {
                 $where['type'] = $type;
+            } else {
+                $columns = array(
+                    'term',
+                    'count' => new Expression('SUM(count)')
+                );
             }
-            $select->where($where);
-            $rowset = $modelLink->selectWith($select);
-
         }
+        $select = $model->select()
+            ->columns($columns)
+            ->where($where)
+            ->limit($limit)
+            ->order('count DESC');
+        if ($module) {
+            $select->group('term');
+        }
+        if ($offset) {
+            $select->offset($offset);
+        }
+        $rowset = $model->selectWith($select);
         foreach ($rowset as $row) {
             $result[] = array(
-                'tag'   => $row['tag'],
+                'term'  => $row['term'],
                 'count' => $row['count'],
             );
         }

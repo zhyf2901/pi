@@ -22,23 +22,23 @@ return array(
     // Admin menu.
     'front'     => false,
     'admin'     => array(
-        'pagea'    => array(
-            'label'         => _t('Tags'),
+        'top'   => array(
+            'label'         => _t('Top tags'),
             'route'         => 'admin',
             'controller'    => 'index',
-            'action'        => 'list',
+            'action'        => 'top',
         ),
-        'pagec'    => array(
-            'label'         => _t('Relationships'),
+        'new'   => array(
+            'label'         => _t('New tags'),
             'route'         => 'admin',
             'controller'    => 'index',
-            'action'        => 'linklist',
+            'action'        => 'new',
         ),
-        'pagef'    => array(
-            'label'         => _t('Statistics'),
+        'items'    => array(
+            'label'         => _t('Tagged items'),
             'route'         => 'admin',
             'controller'    => 'index',
-            'action'        => 'stats',
+            'action'        => 'link',
         ),
     ),
 );
