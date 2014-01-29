@@ -78,14 +78,14 @@ return array(
             'title'       => _t('Enable Tag'),
             'description' => _t('Enable tag (Tag module must be installed)'),
             'edit'        => 'checkbox',
-            'value'       => 0,
+            'value'       => 1,
             'filter'      => 'number_int',
         ),
         'default_source'  => array(
             'category'    => 'general',
             'title'       => _t('Default Source'),
             'description' => _t('Display when no source is provided.'),
-            'value'       => 'Pi',
+            'value'       => Pi::config('sitename') . ' (' . Pi::url('www', true) . ')',
         ),
         'default_category' => array(
             'category'    => 'general',

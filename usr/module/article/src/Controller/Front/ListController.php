@@ -104,21 +104,20 @@ class ListController extends ActionController
         $totalCount = intval($articleCountResultset->current()->total);
 
         // Paginator
-        $paginator = Paginator::factory($totalCount);
-        $paginator->setItemCountPerPage($limit)
-            ->setCurrentPageNumber($page)
-            ->setUrlOptions(array(
-                'page_param' => 'p',
-                'router'     => $this->getEvent()->getRouter(),
-                'route'      => $route,
-                'params'     => array(
+        $paginator = Paginator::factory($totalCount, array(
+            'limit'       => $limit,
+            'page'        => $page,
+            'url_options' => array(
+                'page_param'    => 'p',
+                'params'        => array(
                     'module'        => $this->getModule(),
                     'controller'    => 'list',
                     'action'        => 'all',
                     'list'          => 'all',
                 ),
-            ));
-        
+            ),
+        ));
+
         $module = $this->getModule();
         $config = Pi::service('module')->config('', $module);
         
@@ -230,8 +229,11 @@ class ListController extends ActionController
             if ($id == $item['id']) {
                 return $item['title'];
             }
-            if (isset($item['child'])) {
-                $this->getCategoryTitle($id, $item['child']);
+            if (isset($item['pages'])) {
+                $title = $this->getCategoryTitle($id, $item['pages']);
+                if ($title) {
+                    return $title;
+                }
             }
         }
     }

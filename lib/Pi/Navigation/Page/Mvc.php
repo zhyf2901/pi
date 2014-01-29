@@ -25,20 +25,12 @@ use Zend\Mvc\ModuleRouteListener;
  */
 class Mvc extends ZendMvcPage
 {
-    /**#@+
-     * Re-initialize
-     * Modified by Taiwen Jiang
-     */
     /**
      * {@inheritDoc}
      * @var bool|null
      */
     protected $active = null;
-    /**#@-*/
 
-    /**#@+
-     * Added by Taiwen Jiang
-     */
     /**
      * Module name to use when assembling URL
      * @var string
@@ -52,19 +44,6 @@ class Mvc extends ZendMvcPage
     protected $section;
 
     /**
-     * Default RouteMatch to be used if RouteMatch is not given.
-     * @var RouteMatch
-     */
-    protected static $defaultRouteMatch = null;
-
-    /**
-     * Default Router to be used if Router is not given.
-     * @var RouteStackInterface
-     */
-    protected static $defaultRouter = null;
-    /**#@-*/
-
-    /**
      * Returns whether page should be considered active or not
      *
      * @param  bool $recursive  [optional] whether page should be considered
@@ -74,9 +53,6 @@ class Mvc extends ZendMvcPage
      */
     public function isAbstractActive($recursive = false)
     {
-        /**#@+
-         * Modified by Taiwen Jiang
-         */
         //if (!$this->active && $recursive) {
         if (null === $this->active && $recursive) {
             foreach ($this->pages as $page) {
@@ -88,7 +64,6 @@ class Mvc extends ZendMvcPage
             $this->active = false;
             return false;
         }
-        /**#@-*/
 
         return $this->active;
     }
@@ -99,8 +74,9 @@ class Mvc extends ZendMvcPage
      * This method will inject the container as the given page's parent by
      * calling {@link Page\AbstractPage::setParent()}.
      *
-     * @param  Page\AbstractPage|array|Traversable $page  page to add
-     * @return self
+     * @param AbstractPage|array|Traversable $page  page to add
+     *
+     * @return this
      * @throws Exception\InvalidArgumentException if page is invalid
      * @see Pi\Navigation\Navigation::addPage()
      * @see Pi\Navigation\Page\Uri::addPage()
@@ -147,12 +123,8 @@ class Mvc extends ZendMvcPage
      */
     public function isActive($recursive = false)
     {
-        /**#@+
-         * Modified by Taiwen Jiang
-         */
         //if (!$this->active) {
         if (null === $this->active) {
-        /**#@-*/
             $reqParams = array();
 
             /**#@+
@@ -188,6 +160,20 @@ class Mvc extends ZendMvcPage
                 }
 
                 if (null !== $this->getRoute()) {
+                    /**#@+
+                     * Added by Taiwen Jiang
+                     */
+                    if (!empty($myParams['module'])
+                        && $myParams['module'] === $reqParams['module']
+                        && empty($myParams['controller'])
+                        && empty($myParams['index'])
+                    ) {
+                        $section = isset($myParams['section']) ? $myParams['section'] : '';
+                        if ($section == $this->routeMatch->getParam('section')) {
+                            $this->active = true;
+                            return $this->active;
+                        }
+                    }
                     if ($this->routeMatch->getMatchedRouteName()
                             === $this->getRoute()
                         && (count(array_intersect_assoc($reqParams, $myParams))
@@ -197,12 +183,19 @@ class Mvc extends ZendMvcPage
                         $this->active = true;
                         return $this->active;
                     } else {
-                        /**#@+
-                         * Added by Taiwen Jiang
-                         */
                         return $this->isAbstractActive($recursive);
-                        /**#@-*/
+                    }
+                    /**#@-*/
 
+                    if ($this->routeMatch->getMatchedRouteName()
+                            === $this->getRoute()
+                        && (count(array_intersect_assoc($reqParams, $myParams))
+                            == count($myParams)
+                        )
+                    ) {
+                        $this->active = true;
+                        return $this->active;
+                    } else {
                         return parent::isActive($recursive);
                     }
                 }
@@ -440,7 +433,7 @@ class Mvc extends ZendMvcPage
         /**#@+
          * Modified by Taiwen Jiang
          */
-        return $this->routeMatch ?: static::$defaultRouteMatch;
+        return $this->routeMatch ?: Pi::service('url')->getRouteMatch();
         /**#@-*/
         return $this->routeMatch;
     }
@@ -453,35 +446,10 @@ class Mvc extends ZendMvcPage
         /**#@+
          * Modified by Taiwen Jiang
          */
-        return $this->router ?: static::$defaultRouter;
+        return $this->router ?: Pi::service('url')->getRouter();
         /**#@-*/
         return $this->router;
     }
-
-    /**#@+
-     * Added by Taiwen Jiang
-     */
-    /**
-     * Sets the default RouteMatch
-     *
-     * @param  RouteMatch $matches
-     * @return void
-     */
-    public static function setDefaultRouteMatch($matches)
-    {
-        self::$defaultRouteMatch = $matches;
-    }
-
-    /**
-     * Gets the default RouteMatch
-     *
-     * @return RouteMatch
-     */
-    public static function getDefaultRouteMatch()
-    {
-        return static::$defaultRouteMatch;
-    }
-    /**#@-*/
 
     /**
      * {@inheritDoc}

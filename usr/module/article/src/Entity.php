@@ -278,7 +278,7 @@ class Entity
         // Generate columns of extended table and statistics table
         $extendedColumns = Pi::service('registry')
             ->handler('extended', $module)
-            ->read();
+            ->read($module);
         $statisColumns = ModelStats::getAvailableColumns();
         if (!empty($columns)) {
             // Get needed columns of extended table
@@ -400,6 +400,7 @@ class Entity
                 unset($resultsetUser);
             }
 
+            /*
             if (!empty($articleIds)) {
                 if ((empty($columns) || in_array('tag', $columns))
                     && $config['enable_tag']
@@ -407,6 +408,7 @@ class Entity
                     $tags = Pi::service('tag')->get($module, $articleIds);
                 }
             }
+            */
 
             foreach ($resultset as &$row) {
                 if (empty($columns) || in_array('category', $columns)) {
@@ -434,12 +436,14 @@ class Entity
                     }
                 }
 
+                /*
                 if ((empty($columns) 
                     || in_array('tag', $columns)) && $config['enable_tag']) {
                     if (!empty($tags[$row['id']])) {
                         $row['tag'] = $tags[$row['id']];
                     }
                 }
+                */
 
                 if (empty($columns) || in_array('subject', $columns)) {
                     $route      = Pi::api('api', $module)->getRouteName($module);
@@ -507,7 +511,6 @@ class Entity
         if (empty($row->id)) {
             return array();
         }
-        $subject = $subtitle = $content = '';
         if ($row->markup) {
             $subject  = Pi::service('markup')->render($row->subject, 'html', $row->markup);
             $subtitle = Pi::service('markup')->render($row->subtitle, 'html', $row->markup);
@@ -530,7 +533,7 @@ class Entity
             'seo'           => array(),
             'author'        => array(),
             'attachment'    => array(),
-            'tag'           => array(),
+            'tag'           => '',
             'related'       => array(),
         );
 
@@ -555,44 +558,41 @@ class Entity
             'article'   => $id,
             'type'      => 'attachment',
         ));
-        $mediaIds = array(0);
+        $mediaIds = array();
         foreach ($resultsetAsset as $asset) {
             $mediaIds[$asset->media] = $asset->media;
         }
-        
-        $resultsetMedia = Pi::model('media', $module)->select(
-            array('id' => $mediaIds)
-        );
+        if ($mediaIds) {
+            $resultsetMedia = Pi::model('media', $module)->select(
+                array('id' => $mediaIds)
+            );
 
-        foreach ($resultsetMedia as $media) {
-            $result['attachment'][] = array(
-                'original_name' => $media->title,
-                'extension'     => $media->type,
-                'size'          => $media->size,
-                'url'           => Pi::engine()
-                    ->application()
-                    ->getRouter()
-                    ->assemble(
+            foreach ($resultsetMedia as $media) {
+                $result['attachment'][] = array(
+                    'original_name' => $media->title,
+                    'extension'     => $media->type,
+                    'size'          => $media->size,
+                    'url'           => Pi::service('url')->assemble(
+                        'default',
                         array(
                             'module'     => $module,
                             'controller' => 'media',
                             'action'     => 'download',
                             'id'         => $media->id,
-                        ),
-                        array(
-                            'name'       => 'default',
                         )
                     ),
-            );
+                );
+            }
         }
 
         // Get tag
+        /*
         if ($config['enable_tag']) {
             $result['tag'] = Pi::service('tag')->get($module, $id);
         }
+        */
 
         // Get related articles
-        $relatedIds = $related = array();
         $relatedIds = Pi::model('related', $module)->getRelated($id);
 
         if ($relatedIds) {
@@ -622,27 +622,33 @@ class Entity
 
         // Getting seo
         $modelExtended  = Pi::model('extended', $module);
-        $rowExtended    = $modelExtended->find($row->id, 'article');
-        $result['slug'] = $rowExtended->slug;
-        $result['seo']  = array(
-            'title'        => $rowExtended->seo_title,
-            'keywords'     => $rowExtended->seo_keywords,
-            'description'  => $rowExtended->seo_description,
-        );
+        $rowExtended    = $modelExtended->find($row->id, $module);
+        if ($rowExtended) {
+            $result['slug'] = $rowExtended->slug;
+            $result['seo']  = array(
+                'title'        => $rowExtended->seo_title,
+                'keywords'     => $rowExtended->seo_keywords,
+                'description'  => $rowExtended->seo_description,
+            );
+        }
         
         // Getting stats data
         $modelStatis    = Pi::model('stats', $module);
-        $rowStatis      = $modelStatis->find($row->id, 'article');
-        $result['visits'] = $rowStatis->visits;
+        $rowStatis      = $modelStatis->find($row->id, $module);
+        if ($rowStatis) {
+            $result['visits'] = $rowStatis->visits;
+        }
 
         return $result;
     }
-    
+
     /**
      * Get count statistics of draft with different status and published article
-     * 
-     * @param string  $from
-     * @return array 
+     *
+     * @param string $from
+     * @param array  $rules
+     *
+     * @return array
      */
     public static function getSummary($from = 'my', $rules = array())
     {

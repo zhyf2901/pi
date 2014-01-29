@@ -44,17 +44,21 @@ class TagController extends ActionController
         $offset = ($page - 1) * $limit;
 
         // Total count
-        $totalCount = (int) Pi::service('tag')->getCount($module, $tag);
+        $totalCount = (int) Pi::service('tag')->getCount($tag, $module);
 
         // Get article ids
-        $articleIds = Pi::service('tag')->getList(
-            $module, 
+        $articleTags = Pi::service('tag')->getList(
             $tag, 
-            null, 
+            $module, 
+            '', 
             $limit, 
             $offset
         );
-
+        
+        foreach ($articleTags as $row) {
+            $articleIds[] = $row['item'];
+        }
+        
         if ($articleIds) {
             $where['id']    = $articleIds;
             $articles       = array_flip($articleIds);
@@ -78,19 +82,17 @@ class TagController extends ActionController
             });
         }
 
-        $route = Pi::api('api', $module)->getRouteName();
         // Pagination
-        $paginator = Paginator::factory($totalCount);
-        $paginator->setItemCountPerPage($limit)
-            ->setCurrentPageNumber($page)
-            ->setUrlOptions(array(
-                'page_param' => 'p',
-                'router'     => $this->getEvent()->getRouter(),
-                'route'      => $route,
-                'params'     => array(
+        $paginator = Paginator::factory($totalCount, array(
+            'limit'       => $limit,
+            'page'        => $page,
+            'url_options' => array(
+                'page_param'    => 'p',
+                'params'        => array(
                     'tag'           => $tag,
                 ),
-            ));
+            ),
+        ));
 
         $this->view()->assign(array(
             'title'     => __('Articles on Tag '),

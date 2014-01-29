@@ -54,34 +54,44 @@ class Tag extends AbstractHtmlElement
         if (!Pi::service('tag')->active()) {
             return '';
         }
-        if (!$data) {
-            $data = Pi::service('url')->getRequestUri();
-        }
-        if (is_string($data)) {
-            $routeMatch = Pi::service('url')->match($data);
+        if (!$data || is_string($data)) {
+            if (!$data) {
+                $routeMatch = Pi::service('url')->getRouteMatch();
+            } else {
+                $routeMatch = Pi::service('url')->match($data);
+            }
             $module = $routeMatch->getParam('module');
-            $item = $routeMatch->getParam('id');
-            $type = '';
+            $item   = $routeMatch->getParam('id');
+            $type   = '';
         } else {
-            $module = $data['module'] ?: Pi::service('module')->current();
-            $item = $data['item'];
-            $type = isset($data['type']) ? $data['type'] : '';
+            $module = isset($data['module'])
+                ? $data['module']
+                : Pi::service('module')->current();
+            $item   = $data['item'];
+            $type   = isset($data['type']) ? $data['type'] : '';
         }
+
         if (!$module || !$item) {
             return '';
         }
 
-        $tags = Pi::service('tag')->get($module, $item, $type, true);
+        $tags = Pi::service('tag')->get($module, $item, $type);
+        if (empty($tags)) return '';
+
+        array_walk($tags, function (&$tag) use ($module, $type) {
+            $tag = Pi::service('tag')->render($tag, $module, $type);
+        });
+        
         if ($attribs && is_string($attribs)) {
             $html = $this->getView()->render($attribs, array('tags' => $tags));
         } else {
-            $html = '<div';
+            $html = '<div class="tag-terms"';
             if ($attribs) {
                 $html .= $this->htmlAttribs($attribs);
             }
             $html .= '><span class="tag-label">' . __('Tags: ') . '</span>';
             foreach ($tags as $tag) {
-                $html .= '<span class="tag-term">' . $tag . '</span>';
+                $html .= $tag;
             }
             $html .= '</div>';
         }

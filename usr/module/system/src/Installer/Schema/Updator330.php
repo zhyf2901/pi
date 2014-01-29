@@ -63,7 +63,6 @@ EOT;
             if (false === $status) {
                 return $status;
             }
-
         }
 
         return $status;

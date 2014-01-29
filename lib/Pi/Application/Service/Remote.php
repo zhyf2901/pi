@@ -114,7 +114,10 @@ class Remote extends AbstractService
      */
     public function loadAdapter($name, array $options = array())
     {
-        $class = sprintf('Zend\Http\Client\Adapter\%s', ucfirst($name));
+        $class = sprintf('Pi\Http\Client\Adapter\%s', ucfirst($name));
+        if (!class_exists($class)) {
+            $class = sprintf('Zend\Http\Client\Adapter\%s', ucfirst($name));
+        }
         $adapter = new $class;
         if ($options) {
             $adapter->setOptions($options);
@@ -513,6 +516,9 @@ class Remote extends AbstractService
         array $headers = array(),
         array $options = array()
     ) {
+        @ignore_user_abort(true);
+        @set_time_limit(0);
+
         $uri = $this->canonizeUrl($url, $params);
 
         $isFtp = false;
@@ -624,6 +630,9 @@ class Remote extends AbstractService
         array $headers = array(),
         array $options = array()
     ) {
+        @ignore_user_abort(true);
+        @set_time_limit(0);
+
         $uri = $this->canonizeUrl($url, $params);
 
         $isFtp = false;

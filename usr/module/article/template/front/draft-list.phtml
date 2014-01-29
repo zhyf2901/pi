@@ -1,4 +1,4 @@
-<?php include 'draft-nav.phtml'; ?>
+<?php /* include 'draft-nav.phtml'; */ ?>
 <div id="jsList">
     <div class="form-inline">
         <span class="btn btn-primary btn-delete"><?php _e('Delete'); ?></span>
@@ -11,7 +11,11 @@
                 </th>
                 <th><?php echo __('Title'); ?></th>
                 <th style="width: 15%;"><?php _e('Category'); ?></th>
+                <?php
+                /*
                 <th style="width: 15%;"><?php _e('Tag'); ?></th>
+                */
+                ?>
                 <th style="width: 15%;">
                 <?php echo $status == $flags['published'] ? __('Published time') 
                     : __('Last update date'); 
@@ -68,14 +72,18 @@
                     echo $this->escape($draft['category_title']);
                 } ?>
                 </td>
-                <td><?php 
-                    echo (isset($draft['tag']) and !empty($draft['tag']))
-                        ? $this->escape(implode(',', $draft['tag'])) 
+                <?php
+                /*
+                <td><?php
+                    echo !empty($draft['tag'])
+                        ? $this->escape($draft['tag']) 
                         : '<span class="text-muted">' . __('No tags') . '</span>' 
                 ?>
                 </td>
+                */
+                ?>
                 <td><?php 
-                    echo date('Y-m-d', $status == $flags['published'] 
+                    echo _date($status == $flags['published']
                         ? $draft['time_publish'] 
                         : ($draft['time_update'] ?: $draft['time_save'])
                     ); ?>

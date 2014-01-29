@@ -115,20 +115,19 @@ class TopicController extends ActionController
             ->current()->count;
 
         // Pagination
-        $paginator = Paginator::factory($totalCount);
-        $paginator->setItemCountPerPage($limit)
-            ->setCurrentPageNumber($page)
-            ->setUrlOptions(array(
-                'page_param' => 'p',
-                'router'     => $this->getEvent()->getRouter(),
-                'route'      => 'admin',
+        $paginator = Paginator::factory($totalCount, array(
+            'limit'       => $limit,
+            'page'        => $page,
+            'url_options' => array(
+                'page_param'    => 'p',
                 'params'     => array_filter(array(
                     'module'        => $module,
                     'controller'    => 'topic',
                     'action'        => 'list-article',
                     'topic'         => $topic,
                 )),
-            ));
+            ),
+        ));
 
         $this->view()->assign(array(
             'title'         => $rowTopic->title,
@@ -230,26 +229,28 @@ class TopicController extends ActionController
         $totalCount    = (int) $resulsetCount->current()->total;
 
         // Paginator
-        $paginator = Paginator::factory($totalCount);
-        $paginator->setItemCountPerPage($limit)
-            ->setCurrentPageNumber($page)
-            ->setUrlOptions(array(
-            'page_param' => 'p',
-            'router'     => $this->getEvent()->getRouter(),
-            'route'      => 'admin',
-            'params'     => array_filter(array(
-                'module'        => $module,
-                'controller'    => 'topic',
-                'action'        => 'pull',
-                'topic'         => $topic,
-                'category'      => $category,
-                'keyword'       => $keyword,
-            )),
+        $paginator = Paginator::factory($totalCount, array(
+            'limit'       => $limit,
+            'page'        => $page,
+            'url_options' => array(
+                'page_param'    => 'p',
+                'params'     => array_filter(array(
+                    'module'        => $module,
+                    'controller'    => 'topic',
+                    'action'        => 'pull',
+                    'topic'         => $topic,
+                    'category'      => $category,
+                    'keyword'       => $keyword,
+                )),
+            ),
         ));
 
         // Prepare search form
         $form = new SimpleSearchForm;
         $form->setData($this->params()->fromQuery());
+        
+        $count = $this->getModel('article_topic')
+                      ->count(array('topic' => $rowTopic->id));
         
         $this->view()->assign(array(
             'title'      => _a('All Articles'),
@@ -263,6 +264,7 @@ class TopicController extends ActionController
             'relation'   => $relation,
             'topic'      => $rowTopic->toArray(),
             'pulled'     => $topicArticles,
+            'count'      => $count,
         ));
     }
     
@@ -534,18 +536,17 @@ class TopicController extends ActionController
         $select = $model->select()
             ->columns(array('count' => new Expression('count(*)')));
         $totalCount = (int) $model->selectWith($select)->current()->count;
-        
-        $paginator = Paginator::factory($totalCount);
-        $paginator->setItemCountPerPage($limit);
-        $paginator->setCurrentPageNumber($page);
-        $paginator->setUrlOptions(array(
-            'page_param'    => 'p',
-            'router'        => $this->getEvent()->getRouter(),
-            'route'         => 'admin',
-            'params'        => array(
-                'module'        => $module,
-                'controller'    => 'topic',
-                'action'        => 'list-topic',
+
+        $paginator = Paginator::factory($totalCount, array(
+            'limit'       => $limit,
+            'page'        => $page,
+            'url_options' => array(
+                'page_param'    => 'p',
+                'params'        => array(
+                    'module'        => $module,
+                    'controller'    => 'topic',
+                    'action'        => 'list-topic',
+                ),
             ),
         ));
 
@@ -553,7 +554,7 @@ class TopicController extends ActionController
             'title'   => _a('Topic List'),
             'topics'  => $rowset,
             'action'  => 'list-topic',
-            'route'   => Pi::api('api', $module)->getRouteName($module),
+            'route'   => Pi::api('api', $module)->getRouteName(),
             'count'   => $count,
         ));
     }

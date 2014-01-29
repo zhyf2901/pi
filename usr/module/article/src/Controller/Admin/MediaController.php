@@ -94,13 +94,11 @@ class MediaController extends FrontMedia
         $count  = $model->count($where);
 
         // Pagination
-        $paginator = Paginator::factory($count);
-        $paginator->setItemCountPerPage($limit)
-            ->setCurrentPageNumber($page)
-            ->setUrlOptions(array(
-                'page_param' => 'p',
-                'router'     => $this->getEvent()->getRouter(),
-                'route'      => 'admin',
+        $paginator = Paginator::factory($count, array(
+            'limit'       => $limit,
+            'page'        => $page,
+            'url_options' => array(
+                'page_param'    => 'p',
                 'params'     => array_merge(array(
                     'module'     => $this->getModule(),
                     'controller' => 'media',
@@ -108,8 +106,9 @@ class MediaController extends FrontMedia
                     'type'       => $type,
                     'style'      => $style,
                 ), $params),
-            ));
-        
+            ),
+        ));
+
         // Getting search form
         $form = new SimpleSearchForm;
 
@@ -172,6 +171,7 @@ class MediaController extends FrontMedia
      */
     public function addAction()
     {
+        $module  = $this->getModule();
         $configs = Pi::service('module')->config('', $module);
         $configs['max_media_size'] = Pi::service('file')
             ->transformSize($configs['max_media_size']);
@@ -218,11 +218,15 @@ class MediaController extends FrontMedia
      */
     public function editAction()
     {
+        $module  = $this->getModule();
         $configs = Pi::service('module')->config('', $module);
         $configs['max_media_size'] = Pi::service('file')
             ->transformSize($configs['max_media_size']);
         
-        $this->view()->assign('title', _a('Edit Media Info'));
+        $this->view()->assign(array(
+            'title'   => _a('Edit Media Info'),
+            'configs' => $configs,
+        ));
         
         $form = $this->getMediaForm('edit');
         

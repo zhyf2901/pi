@@ -103,17 +103,14 @@ $this->headLink(array(
     </div>
     <!-- Page main content: breadcrumb, flash-messenger, blocks and module content -->
     <?php
-        $blocks = $this->blocks();
-        $blockTemplate = $this->template('block');
+        $blocks         = $this->blocks();
+        $blockTemplate  = $this->template('block');
     ?>
     <div class="container pi-main-container">
         <?php
-        $breadcrumbs = $navigation->breadcrumbs()->setSeparator(' &gt; ')->render();
+        $breadcrumbs = $this->breadcrumb(array('prefix' => array(array('label' => __('Home')))));
         if ($breadcrumbs) {
-            echo sprintf(
-                '<div class="breadcrumb">%s</div>',
-                $breadcrumbs
-            );
+            echo $breadcrumbs;
         }
         ?>
         <!-- Flash messenger -->
@@ -237,7 +234,7 @@ $this->headLink(array(
         <div class="container pi-footer-container">
             <div class="text-center">
                 <a rel="license" href="<?php echo Pi::url('www'); ?>" title="<?php echo _escape($sitename); ?>">
-                    &copy;<?php echo _escape($sitename); ?>
+                    &copy; <?php echo date('Y') . ' ' . _escape($sitename); ?>
                 </a>
                 <a rel="license" href="http://www.pialog.org" title="Pi Engine" target="_blank">
                     Powered by Pi Engine

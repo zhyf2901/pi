@@ -8,6 +8,17 @@ html {
   padding-bottom: 80px;
 }
 
+/* Bootstrap custom */
+.nav-tabs {
+  margin-bottom: 20px;
+}
+
+@media (min-width: 768px) {
+  .navbar-default .navbar-form {
+    width: 250px;
+  }
+}
+
 /* Navbar custom */
 .navbar-inverse {
   margin-bottom: 0;
@@ -25,8 +36,7 @@ html {
 
 .navbar-inverse .navbar-right {
   float: right;
-  margin-top: 0;
-  margin-bottom: 0;
+  margin: 0 -10px 0 !important;
 }
 
 .navbar-inverse .navbar-nav > li {
@@ -71,139 +81,6 @@ html {
     left: 100%;
     top: -5px;
   }
-}
-
-
-
-/* User bar */
-.pi-user-bar {
-  margin: 5px 10px 0 5px;
-  height: 20px;
-  line-height: 20px;
-  font-size: .9em;
-  float: right;
-}
-
-.pi-user-bar {
-  color: #666;
-}
-
-.pi-user-bar a {
-  color: #666;
-}
-
-.pi-user-bar a:hover {
-  color: #005580;
-}
-
-.pi-user-bar .dropdown {
-  display: inline-block;
-  margin-right: 15px;
-}
-
-.pi-user-bar .caret {
-  border-top-color: #666;
-}
-
-/* Navigation */
-.pi-menu-container {
-  font-family: Helvetica, sans-serif;
-  border: 1px solid #006ca3;
-  background-color: #0293da;
-  filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#04a0df', endColorstr='#0180d1', GradientType=0);
-  background-image: -moz-linear-gradient(top, #04a0df, #0180d1);
-  background-image: -webkit-linear-gradient(top, #04a0df, #0180d1);
-  background-image: -o-linear-gradient(top, #04a0df, #0180d1);
-  background-image: linear-gradient(to bottom, #04a0df, #0180d1);
-  box-shadow: 0 1px 1px rgba(0, 0, 0, .2);
-  height: 40px;
-  border-radius: 4px;
-  margin-bottom: 20px;
-}
-
-.pi-menu {
-  list-style: none;
-  padding-left: 0;
-  float: left;
-}
-
-.pi-menu li {
-  float: left;
-  position: relative;
-}
-
-.pi-menu a {
-  display: block;
-  padding: 9px 20px;
-  text-decoration: none;
-}
-
-.pi-menu ul a {
-  padding: 5px 0 5px 20px;
-}
-
-.pi-menu li:hover >a {
-  background: #0076b1;
-}
-
-.pi-menu ul li:hover >a {
-  background: #0292da;
-  border-radius: 3px;
-}
-
-.pi-menu >.active >a {
-  background-color: #0076b1;
-  box-shadow: inset 0 3px 8px #005986;
-}
-
-.pi-menu ul {
-  position: absolute;
-  width: 180px;
-  z-index: 2;
-  background: #0076b1;
-  left: 0;
-  margin: 0;
-  list-style: none;
-  display: none;
-  border-radius: 3px;
-  padding: 0;
-}
-
-.pi-menu ul ul {
-  left: 179px;
-  top: -1px;
-}
-
-.pi-menu li li {
-  float: none;
-}
-
-.pi-menu a {
-  color: #fff;
-}
-
-.pi-menu li:hover >ul {
-  display: block;
-}
-
-.pi-menu-search {
-  float: right;
-  width: 250px;
-  margin: 2px 10px 0;
-}
-
-.pi-breadcrumb {
-  margin-bottom: 0;
-  padding: 10px 0;
-}
-
-/* Block zones */
-.pi-zone-0 .pi-block-header {
-  display: none;
-}
-
-.pi-zone-0 .pi-block-body {
-  padding: 0;
 }
 
 /* Block */
@@ -278,14 +155,41 @@ html {
   top: -60px;
 }
 
-
-/* Bootstrap custom */
-.nav-tabs {
-  margin-bottom: 20px;
+/* ellipsis */
+.pi-ellipsis {
+  overflow: hidden;
+  display: block;
+  line-height: 1.5;
 }
 
-@media (min-width: 768px) {
-  .navbar-default .navbar-form {
-    width: 250px;
-  }
+.pi-ellipsis-1 {
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
+
+.pi-ellipsis-2 {
+  max-height: 3em;
+}
+
+.pi-ellipsis-3 {
+  max-height: 4.5em;
+}
+
+.pi-ellipsis-4 {
+  max-height: 6em;
+}
+
+/* list or order list */
+.pi-list {
+
+}
+
+.pi-order-list {
+
+}
+
+/* Module custom */
+.tag-terms a {
+  padding: 0 5px;
+}
+

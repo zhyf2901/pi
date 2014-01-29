@@ -38,11 +38,13 @@ class Block
         
         $maxTopCount = $options['top-category'];
         $maxSubCount = $options['sub-category'];
-        $route       = Pi::api('api', $module)->getRouteName($module);
+        $route       = Pi::api('api', $module)->getRouteName();
         
-        $categories  = Pi::api('api', $module)->getCategoryList(array('is-tree' => true));
+        $categories  = Pi::api('api', $module)->getCategoryList(
+            array('is-tree' => true)
+        );
         
-        $allItems = self::canonizeCategories(
+        $allItems = static::canonizeCategories(
             $categories['child'],
             array('route' => $route)
         );
@@ -82,6 +84,8 @@ class Block
             return false;
         }
         
+        $route = Pi::api('api', $module)->getRouteName();
+        
         // Get all categories
         $categories = array(
             'all' => array(
@@ -90,7 +94,7 @@ class Block
                 'depth' => 0,
                 'image' => '',
                 'url'   => Pi::service('url')->assemble(
-                    Pi::api('api', $module)->getRouteName($module),
+                    $route,
                     array(
                         'controller' => 'list',
                         'action'     => 'all',
@@ -104,10 +108,10 @@ class Block
             if ('root' == $row['name']) {
                 continue;
             }
-            $url = Pi::service('url')->assemble('', array(
+            $url = Pi::service('url')->assemble($route, array(
                 'controller' => 'category',
                 'action'     => 'list',
-                'category'   => $row['id'],
+                'category'   => $row['slug'] ?: $row['id'],
             ));
             $categories[$row['id']] = array(
                 'id'    => $row['id'],
@@ -118,7 +122,7 @@ class Block
             );
         }
         
-        $params = Pi::engine()->application()->getRouteMatch()->getParams();
+        $params = Pi::service('url')->getRouteMatch()->getParams();
         
         return array(
             'items'    => $categories,
@@ -167,21 +171,18 @@ class Block
         }
         
         // Get category Info
-        $route = Pi::api('api', $module)->getRouteName($module);
+        $route = Pi::api('api', $module)->getRouteName();
         $where = array('id' => $categoryIds);
         $rowCategory = Pi::model('category', $module)->select($where);
         $categories = array();
         foreach ($rowCategory as $row) {
             $categories[$row->id]['title'] = $row->title;
-            $categories[$row->id]['url']   = Pi::engine()
-                ->application()
-                ->getRouter()
-                ->assemble(
-                    array(
-                        'category' => $row->slug ?: $row->id,
-                    ),
-                    array('name' => $route)
-                );
+            $categories[$row->id]['url']   = Pi::service('url')->assemble(
+                $route,
+                array(
+                    'category' => $row->slug ?: $row->id,
+                )
+            );
         }
         
         return array(
@@ -205,7 +206,7 @@ class Block
             return false;
         }
         
-        $params   = Pi::engine()->application()->getRouteMatch()->getParams();
+        $params   = Pi::service('url')->getRouteMatch()->getParams();
         
         $config   = Pi::service('module')->config('', $module);
         $image    = $config['default_feature_thumb'];
@@ -273,9 +274,10 @@ class Block
         return array(
             'articles'  => $articles,
             'target'    => $options['target'],
-            'style'     => $options['block-style'],
+            'elements'  => (array) $options['element'],
             'config'    => $config,
             'column'    => $options['column-number'],
+            'rows'      => $options['description_rows'],
         );
     }
     
@@ -332,9 +334,10 @@ class Block
         return array(
             'articles'  => $articles,
             'target'    => $options['target'],
-            'style'     => $options['block-style'],
+            'elements'  => (array) $options['element'],
             'column'    => $options['column-number'],
             'config'    => $config,
+            'rows'      => $options['description_rows'],
         );
     }
     
@@ -352,14 +355,12 @@ class Block
         }
         
         return array(
-            'url' => Pi::engine()->application()->getRouter()->assemble(
+            'url' => Pi::service('url')->assemble(
+                'default',
                 array(
                     'module'     => $module,
                     'controller' => 'search',
                     'action'     => 'simple',
-                ),
-                array(
-                    'name'       => 'default',
                 )
             ),
         );
@@ -463,7 +464,7 @@ class Block
         $day    = $options['day-range'] ? intval($options['day-range']) : 7;
 
         if ($options['is-topic']) {
-            $params = Pi::engine()->application()->getRouteMatch()->getParams();
+            $params = Pi::service('url')->getRouteMatch()->getParams();
             if (is_string($params)) {
                 $params['topic'] = Pi::model('topic', $module)
                     ->slugToId($params['topic']);
@@ -500,9 +501,10 @@ class Block
         return array(
             'articles'  => $articles,
             'target'    => $options['target'],
-            'style'     => $options['block-style'],
+            'elements'  => (array) $options['element'],
             'column'    => $options['column-number'],
             'config'    => $config,
+            'rows'      => $options['description_rows'],
         );
     }
     
@@ -603,10 +605,11 @@ class Block
             'articles'  => $articles,
             'target'    => $options['target'],
             'style'     => $options['block-style'],
-            'width'     => $options['image-width'],
+            'elements'  => (array) $options['element'],
             'height'    => $options['image-height'],
             'images'    => $images,
             'config'    => Pi::service('module')->config('', $module),
+            'rows'      => $options['description_rows'],
         );
     }
     
@@ -626,15 +629,12 @@ class Block
             $result[$category['id']] = array(
                 'title' => $category['title'],
                 'depth' => $category['depth'],
-                'url'   => Pi::engine()
-                    ->application()
-                    ->getRouter()
-                    ->assemble(
-                        array(
-                            'category'  => $category['slug'] ?: $category['id'],
-                        ), 
-                        array('name' => $options['route'])
-                    ),
+                'url'   => Pi::service('url')->assemble(
+                    $options['route'],
+                    array(
+                        'category'  => $category['slug'] ?: $category['id'],
+                    )
+                ),
             );
             if (isset($category['child'])) {
                 $children = self::canonizeCategories(

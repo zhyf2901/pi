@@ -25,6 +25,7 @@
     <div id="jsUpload">
         <div class="upload-media">
         <?php 
+            $imageExtension = array_map('trim', explode(',', $configs['image_format']));
             $src = $form->get('url')->getValue();
             if ($src) {
                 if (in_array(
@@ -79,7 +80,7 @@
         initialize: function() {
             page.$("[name=placeholder]")
                 .parents(".form-group:first")
-                .find(".col-md-4:first")
+                .find(".js-form-element")
                 .html($("#temp-upload").html());
             this.$el   = $("#jsUpload");
             this.input = this.$("[name=upload]");

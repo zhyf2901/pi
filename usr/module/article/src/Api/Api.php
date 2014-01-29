@@ -51,7 +51,7 @@ class Api extends AbstractApi
         $limit = null
     ) {
         if (empty($submitter)) {
-            $user      = Pi::service('user')->getUser();
+            //$user      = Pi::service('user')->getUser();
             $submitter = Pi::user()->getId();
         }
         if (!is_numeric($submitter)) {
@@ -123,7 +123,7 @@ class Api extends AbstractApi
         $module = $this->getModule();
         $rows   = Pi::service('registry')
             ->handler('category', $module)
-            ->read($where, $isTree);
+            ->read($where, $isTree, $module);
         
         return $rows;
     }
@@ -137,7 +137,9 @@ class Api extends AbstractApi
     public function getAuthorList($ids = array())
     {
         $module = $this->getModule();
-        $rows   = Pi::service('registry')->handler('author', $module)->read();
+        $rows   = Pi::service('registry')
+            ->handler('author', $module)
+            ->read($module);
         
         if (!empty($ids)) {
             foreach ($rows as $key => $row) {
@@ -149,15 +151,22 @@ class Api extends AbstractApi
         
         return $rows;
     }
-    
+
     /**
      * Get route name
-     * 
-     * @return string 
+     *
+     * @param string $module
+     *
+     * @return string
      */
-    public function getRouteName($module = null)
+    public function getRouteName($module = '')
     {
         $module = $module ?: $this->getModule();
+        $route = $module . '-article';
+
+        return $route;
+
+        /*
         $defaultRoute = $module . '-article';
         $resFilename = sprintf(
             '%s/module/%s/config/route.php',
@@ -184,11 +193,14 @@ class Api extends AbstractApi
         
         // Check if the route is already in database
         $routeName = $module . '-' . $name;
-        $cacheName = Pi::service('registry')->handler('route', $module)->read();
+        $cacheName = Pi::service('registry')
+            ->handler('route', $module)
+            ->read($module);
         if ($routeName != $cacheName) {
             return $defaultRoute;
         }
         
         return $cacheName;
+        */
     }
 }

@@ -703,15 +703,17 @@ class Api extends AbstractApi
                 'post'  => $post['id']
             ));
             if (!empty($ops['users'])) {
-                if (isset($ops['users'][$post['uid']])) {
-                    $post['user'] = $ops['users'][$post['uid']];
+                $uid = (int) $post['uid'];
+                if (isset($ops['users'][$uid])) {
+                    $post['user'] = $ops['users'][$uid];
                 } else {
                     $post['user'] = $ops['users'][0];
                 }
             }
             if (!empty($ops['targets'])) {
-                if (isset($ops['targets'][$post['root']])) {
-                    $post['target'] = $ops['targets'][$post['root']];
+                $root = (int) $post['root'];
+                if (isset($ops['targets'][$root])) {
+                    $post['target'] = $ops['targets'][$root];
                 } else {
                     $post['target'] = $ops['targets'][0];
                 }
@@ -906,6 +908,42 @@ class Api extends AbstractApi
     }
 
     /**
+     * Get target(s) content
+     *
+     * @param int|int[] $item
+     * @param array $options Callback or module + type
+     *
+     * @return mixed
+     */
+    public function getTargetContent($item, array $options)
+    {
+        if (empty($options['module'])) {
+            return array();
+        }
+
+        $items = (array) $item;
+        if (!empty($options['callback'])) {
+            $handler = new $options['callback']($options['module']);
+            $list = array_values($handler->get($items));
+        } else {
+            $vars = array('title', 'url', 'uid', 'time');
+            $conditions = array(
+                'module'    => $options['module'],
+                'type'      => empty($options['type']) ? '' : $options['type'],
+                'id'        => $items,
+            );
+            $list = Pi::service('module')->content($vars, $conditions);
+        }
+        if (is_scalar($item)) {
+            $result = current($list);
+        } else {
+            $result = $list;
+        }
+
+        return $result;
+    }
+
+    /**
      * Get target content of a root
      *
      * @param int $root
@@ -925,9 +963,31 @@ class Api extends AbstractApi
         if (!$target) {
             return false;
         }
-        $handler = new $target['callback']($rootData['module']);
-        //$handler->setItem($rootData['item']);
-        $result = $handler->get($rootData['item']);
+        $data = array(
+            'module'    => $rootData['module'],
+            'type'      => $rootData['type'],
+            'callback'  => $target['callback'],
+        );
+        $result = $this->getTargetContent($rootData['item'], $data);
+        /*
+        if (!empty($target['callback'])) {
+            $handler = new $target['callback']($rootData['module']);
+            $result = $handler->get($rootData['item']);
+        } else {
+            $vars = array('title', 'url', 'uid', 'time');
+            $conditions = array(
+                'module'    => $rootData['module'],
+                'type'      => $rootData['type'],
+                'id'        => $rootData['item']
+            );
+            $list = Pi::service('module')->content($vars, $conditions);
+            if ($list) {
+                $result = current($list);
+            } else {
+                $result = false;
+            }
+        }
+        */
 
         return $result;
     }
@@ -955,18 +1015,30 @@ class Api extends AbstractApi
             $items[$row['module']][$row['type']][$row['item']] = $id;
         }
         //d($items);
-        $targets = Pi::registry('type', 'comment')->read();
+        $types = Pi::registry('type', 'comment')->read();
         $list = array();
         foreach ($items as $module => $mList) {
             foreach ($mList as $type => $cList) {
-                if (!isset($targets[$module][$type])) {
+                if (!isset($types[$module][$type])) {
                     continue;
                 }
-                $callback = $targets[$module][$type]['callback'];
+                /*
+                $callback = $types[$module][$type]['callback'];
                 $handler = new $callback($module);
                 $targets = $handler->get(array_keys($cList));
                 foreach ($targets as $item => $target) {
                     $root = $cList[$item];
+                    $list[$root] = $target;
+                }
+                */
+                $data = array(
+                    'module'    => $module,
+                    'type'      => $type,
+                    'callback'  => $types[$module][$type]['callback'],
+                );
+                $targets = $this->getTargetContent(array_keys($cList), $data);
+                foreach ($targets as $target) {
+                    $root = $cList[$target['id']];
                     $list[$root] = $target;
                 }
             }
@@ -1047,13 +1119,11 @@ class Api extends AbstractApi
             $select->order($order);
         }
 
-        $targets = Pi::registry('type', 'comment')->read();
-
-        $items = array();
-        $keyList = array();
-        $rowset = Pi::db()->query($select);
+        $types      = Pi::registry('type', 'comment')->read();
+        $items      = array();
+        $keyList    = array();
+        $rowset     = Pi::db()->query($select);
         foreach ($rowset as $row) {
-            //vd((array) $row);
             $root = (int) $row['id'];
             $keyList[] = $root;
             $items[$row['module']][$row['type']][$row['item']] = array(
@@ -1062,13 +1132,14 @@ class Api extends AbstractApi
                 'comment_uid'   => (int) $row['uid'],
             );
         }
-        //d($items);
+
         $targetList = array();
         foreach ($items as $module => $mList) {
             foreach ($mList as $type => $cList) {
-                if (!isset($targets[$module][$type])) {
+                if (!isset($types[$module][$type])) {
                     continue;
                 }
+                /*
                 $callback = $targets[$module][$type]['callback'];
                 $handler = new $callback($module);
                 $targets = $handler->get(array_keys($cList));
@@ -1076,13 +1147,24 @@ class Api extends AbstractApi
                     $root = $cList[$item]['root'];
                     $targetList[$root] = array_merge($target, $cList[$item]);
                 }
+                */
+
+                $data = array(
+                    'module'    => $module,
+                    'type'      => $type,
+                    'callback'  => $types[$module][$type]['callback'],
+                );
+                $targets = $this->getTargetContent(array_keys($cList), $data);
+                foreach ($targets as $target) {
+                    $item = $target['id'];
+                    $root = $cList[$item]['root'];
+                    $targetList[$root] = array_merge($target, $cList[$item]);
+                }
             }
         }
-        //d($targetList);
         foreach ($keyList as $key) {
             $result[$key] = &$targetList[$key];
         }
-        //d($result);
 
         return $result;
     }

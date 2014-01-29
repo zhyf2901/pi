@@ -24,6 +24,7 @@ return array(
         'license'       => 'New BSD',
         // Logo image, for admin, optional
         'logo'          => 'image/logo.png',
+        // Logo icon
         'icon'          => 'fa fa-tags',
     ),
     // Author information
@@ -45,10 +46,11 @@ return array(
             ),
         ),
         // Navigation definition
-        'navigation' => 'navigation.php',
+        'navigation'    => 'navigation.php',
         // Config definition.
-        'config'     => 'config.php',
+        'config'        => 'config.php',
         // Block definition.
-        'block'      => 'block.php',
+        'block'         => 'block.php',
+        'route'         => 'route.php',
     ),
 );

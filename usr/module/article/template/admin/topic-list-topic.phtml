@@ -1,11 +1,10 @@
 <?php
-    $this->bootstrap();
-    $this->css($this->assetModule('script/article-front-admin.css'));
+    $this->css($this->assetModule('script/admin.css'));
     $this->jQuery();
     $this->Backbone();
 ?>
 
-<div id="jsList">
+<div id="pi-js-list">
     <table class="table table-striped">
         <tbody>
             <tr>
@@ -89,7 +88,7 @@
             'controller' => 'topic',
             'action'     => ''
         )); ?>" . replace(/list-topic\/$/,""),
-        el      : $("#jsList"),
+        el      : $("#pi-js-list"),
         $       : function(selector) {
             return this.el.find(selector);
         },

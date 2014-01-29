@@ -36,7 +36,7 @@ class AjaxController extends ActionController
      */
     public function getFuzzyUserAction()
     {
-        Pi::service('log')->active(false);
+        Pi::service('log')->mute();
         $resultset = $result = array();
 
         $name  = $this->params('name', '');
@@ -69,16 +69,17 @@ class AjaxController extends ActionController
      * 
      * @return array
      */
-    public function getFuzzyTagAction()
+    /*
+    public function ____getFuzzyTagAction()
     {
-        Pi::service('log')->active(false);
+        Pi::service('log')->mute();
         $resultset = array();
 
         $name  = $this->params('name', '');
         $limit = $this->params('limit', 10);
         $limit = $limit > 100 ? 100 : $limit;
         $module = $this->getModule();
-
+        
         if ($name && $this->config('enable_tag')) {
             $resultset = Pi::service('tag')->match($name, $limit, $module);
         }
@@ -89,6 +90,7 @@ class AjaxController extends ActionController
             'data'      => $resultset,
         );
     }
+    */
     
     /**
      * Get author name by AJAX
@@ -96,7 +98,7 @@ class AjaxController extends ActionController
      */
     public function getFuzzyAuthorAction()
     {
-        Pi::service('log')->active(false);
+        Pi::service('log')->mute();
         $resultset = $result = array();
 
         $name   = $this->params('name', '');

@@ -145,6 +145,7 @@ class ArticleController extends ActionController
             'page'        => $page,
             'showTitle'   => isset($showTitle) ? $showTitle : null,
             'config'      => $config,
+            'module'      => $module,
         ));
     }
 
@@ -227,9 +228,11 @@ class ArticleController extends ActionController
         $draft['related'] = $related;
 
         // Get tag
+        /*
         if ($this->config('enable_tag')) {
             $draft['tag'] = Pi::service('tag')->get($module, $id);
         }
+        */
 
         // Save as draft
         $draftRow = $draftModel->saveRow($draft);
@@ -273,13 +276,16 @@ class ArticleController extends ActionController
         if (!$this->config('enable_front_edit') && 'front' == $this->section) {
             return $this->jumpTo404();
         }
-        
-        $where  = array();
-        $page   = $this->params('p', 1);
-        $limit  = $this->params('limit', 20);
-        $from   = $this->params('from', 'my');
-        $order  = 'time_publish DESC';
 
+        $page       = $this->params('p', 1);
+        $limit      = $this->params('limit', 20);
+        $from       = $this->params('from', 'my');
+        $keyword    = $this->params('keyword', '');
+        $category   = $this->params('category', 0);
+        $filter     = $this->params('filter', '');
+        $order      = 'time_publish DESC';
+
+        $where      = array();
         // Get permission
         $rules = Rule::getPermission();
         if (empty($rules)) {
@@ -300,7 +306,6 @@ class ArticleController extends ActionController
         $modelArticle   = $this->getModel('article');
         $categoryModel  = $this->getModel('category');
 
-        $category = $this->params('category', 0);
         if (!empty($category) and !in_array($category, $where['category'])) {
             return $this->jumpToDenied();
         }
@@ -314,14 +319,12 @@ class ArticleController extends ActionController
         // Build where
         $where['status'] = Article::FIELD_STATUS_PUBLISHED;
         
-        $keyword = $this->params('keyword', '');
         if (!empty($keyword)) {
             $where['subject like ?'] = sprintf('%%%s%%', $keyword);
         }
         $where = array_filter($where);
         
         // The where must be added after array_filter function
-        $filter = $this->params('filter', '');
         if ($filter == 'active') {
             $where['active'] = 1;
         } else if ($filter == 'deactive') {
@@ -335,6 +338,7 @@ class ArticleController extends ActionController
         $totalCount = $modelArticle->count($where);
 
         // Paginator
+        /*
         $paginator = Paginator::factory($totalCount);
         $paginator->setItemCountPerPage($limit)
             ->setCurrentPageNumber($page)
@@ -352,6 +356,22 @@ class ArticleController extends ActionController
                 'filter'        => $filter,
                 'keyword'       => $keyword,
             )),
+        ));
+        */
+
+        $params = array();
+        foreach (array('category', 'filter', 'keyword', 'from') as $key) {
+            if (${$key}) {
+                $params[$key] = ${$key};
+            }
+        }
+        $paginator = Paginator::factory($totalCount, array(
+            'limit'       => $limit,
+            'page'        => $page,
+            'url_options' => array(
+                'page_param'    => 'p',
+                'params'        => $params,
+            ),
         ));
 
         // Prepare search form
@@ -498,7 +518,7 @@ class ArticleController extends ActionController
      */
     public function getFuzzyArticleAction()
     {
-        Pi::service('log')->active(false);
+        Pi::service('log')->mute();
         $articles   = array();
         $pageCount  = $total = 0;
         $module     = $this->getModule();
@@ -516,14 +536,14 @@ class ArticleController extends ActionController
 
         if (strcasecmp('tag', $type) == 0) {
             if ($keyword) {
-                $total     = Pi::service('tag')->getCount($module, $keyword);
+                $total     = Pi::service('tag')->getCount($keyword, $module);
                 $pageCount = ceil($total / $limit);
 
                 // Get article ids
                 $articleIds = Pi::service('tag')->getList(
-                    $module, 
-                    $keyword,
-                    null, 
+                    $keyword, 
+                    $module,
+                    '', 
                     $limit, 
                     $offset
                 );
@@ -596,7 +616,7 @@ class ArticleController extends ActionController
      */
     public function checkArticleExistsAction()
     {
-        Pi::service('log')->active(false);
+        Pi::service('log')->mute();
         $subject = trim($this->params('subject', ''));
         $id      = $this->params('id', null);
         $result  = false;

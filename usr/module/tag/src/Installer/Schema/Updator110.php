@@ -45,6 +45,27 @@ class Updator110 extends AbstractUpdator
         $result = true;
         if (version_compare($version, '1.1.0', '<')) {
 
+            // Add table of draft data
+            $sql =<<<'EOD'
+CREATE TABLE `{draft}` (
+  `id`              int(10)                 unsigned NOT NULL auto_increment,
+  `term`            varchar(255)            NOT NULL,
+  `module`          varchar(64)             NOT NULL default '',
+  `type`            varchar(64)             NOT NULL default '',
+  `item`            int(10)                 unsigned NOT NULL default '0',
+  `time`            int(10)                 unsigned NOT NULL default '0',
+  `order`           int(10)                 unsigned NOT NULL default '0',
+
+  PRIMARY KEY       (`id`),
+  KEY `item`        (`module`, `type`, `item`),
+  KEY `term`        (`term`)
+);
+EOD;
+            $status = $this->querySchema($sql, $this->handler->getParam('module'));
+            if (false === $status) {
+                return $status;
+            }
+
             $tableTag = Pi::db()->prefix('tag', 'tag');
             $sql =<<<'EOT'
 ALTER TABLE %s
@@ -60,6 +81,8 @@ EOT;
             $sql =<<<'EOT'
 ALTER TABLE %s
 ADD `term` varchar(255) NOT NULL,
+MODIFY `module` varchar(64) NOT NULL default '',
+MODIFY `type` varchar(64) NOT NULL default '',
 DROP key `item`,
 ADD KEY `item` (`module`, `type`, `item`),
 ADD KEY `term` (`term`),
@@ -77,6 +100,8 @@ EOT;
 ALTER TABLE %s
 ADD `term` varchar(255) NOT NULL,
 ADD KEY `count` (`module`, `type`, `count`),
+MODIFY `module` varchar(64) NOT NULL default '',
+MODIFY `type` varchar(64) NOT NULL default '',
 DROP key `tag`;
 EOT;
             $sql = sprintf($sql, $tableStats);

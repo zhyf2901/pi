@@ -37,6 +37,37 @@ class Api extends AbstractApi
     protected $module = 'tag';
 
     /**
+     * Generate text from tags
+     *
+     * @param string|string[] $tags
+     * @param string $delimiter Default delimiter
+     *
+     * @return string
+     */
+    public function implode($tags, $delimiter = '')
+    {
+        if (is_array($tags)) {
+            if (!$delimiter) {
+                // Canonize delimiters
+                $delimiter = Pi::service('module')->config('tag_delimiter', $this->module);
+                if (!$delimiter) {
+                    $delimiters = array('s');
+                } else {
+                    $delimiters = explode('|', $delimiter);
+                }
+                if (in_array('s', $delimiters)) {
+                    $delimiter = ' ';
+                } else {
+                    $delimiter = $delimiters[0] . ' ';
+                }
+            }
+            $tags = implode($delimiter, $tags);
+        }
+
+        return $tags;
+    }
+
+    /**
      * Fetch tags from text
      *
      * @param string|string[] $tags
@@ -46,11 +77,54 @@ class Api extends AbstractApi
     public function canonize($tags)
     {
         if (is_string($tags)) {
-            $tags = preg_split('#[\|\s\,]+#', $tags, 0, PREG_SPLIT_NO_EMPTY);
+            $terms  = array();
+            $string = $tags;
+
+            // Canonize delimiters
+            $delimiter = Pi::service('module')->config('tag_delimiter', $this->module);
+            if (!$delimiter) {
+                $delimiters = array('s');
+            } else {
+                $delimiters = explode('|', $delimiter);
+            }
+
+            // Pre-fetch terms quoted by `"`
+            $quote  = Pi::service('module')->config('tag_quote', $this->module);
+            if ($quote) {
+                //$pattern = '`(?:(?:"(?:\\"|[^"])+")|(?:\'(?:\\\'|[^\'])+\'))`is';
+                if (in_array('s', $delimiters)) {
+                    $replacement = ' ';
+                } else {
+                    $replacement = $delimiters[0];
+                }
+                $pattern = '`(?:(?:"(?:\\"|[^"])+"))`is';
+                $callback = function ($match) use (&$terms, $replacement) {
+                    $terms[] = substr($match[0], 1, -1);
+                    return $replacement;
+                };
+                $string = preg_replace_callback($pattern, $callback, $tags);
+            }
+
+            $pattern = '\\' . implode('\\', $delimiters);
+            // Split string into terms by delimiters: whitespace, comma, line break
+            $tags = preg_split('#[' . $pattern . ']+#', $string, 0, PREG_SPLIT_NO_EMPTY);
+
+            // Collect
+            $tags = array_merge($terms, $tags);
         }
+        // Cleaning
         $tags = array_unique(array_filter(array_map('trim', $tags)));
 
-        return $tags;
+        // Discard short terms
+        $length = Pi::service('module')->config('min_length', $this->module) ?: 2;
+        $terms = array();
+        array_walk($tags, function ($term) use (&$terms, $length) {
+            if (strlen($term) >= $length) {
+                $terms[] = $term;
+            }
+        });
+
+        return $terms;
     }
 
     /**
@@ -68,9 +142,9 @@ class Api extends AbstractApi
             $module = Pi::service('module')->current();
         }
         $params = array(
-            'module'        => $this->module,
-            'controller'    => 'index',
-            'action'        => 'list',
+            //'module'        => $this->module,
+            //'controller'    => 'index',
+            //'action'        => 'list',
             'tag'           => $tag
         );
         if ($module) {
@@ -79,7 +153,7 @@ class Api extends AbstractApi
                 $params['type'] = $type;
             }
         }
-        $url = Pi::service('url')->assemble('default', $params);
+        $url = Pi::service('url')->assemble('tag', $params);
 
         return $url;
     }
@@ -105,15 +179,22 @@ class Api extends AbstractApi
     /**
      * Get tags of an item or multi-items
      *
-     * @param string     $module Module name
-     * @param string|array     $item   Item identifier
-     * @param string     $type   Item type, default as ''
-     * @param bool
+     * @param string        $module Module name
+     * @param string|array  $item   Item identifier
+     * @param string        $type   Item type, default as ''
+     * @param bool          $active Active source
      *
      * @return string[]
      */
-    public function get($module, $item, $type = '', $render = false)
+    public function get($module, $item, $type = '', $active = true)
     {
+        if (!$active) {
+            $result = Pi::api('draft', $this->module)
+                ->get($module, $item, $type);
+
+            return $result;
+        }
+
         $result = array();
 
         $items  = (array) $item;
@@ -123,9 +204,7 @@ class Api extends AbstractApi
             'item'      => $items,
         ));
         foreach ($rowset as $row) {
-            $result[$row['item']][] = $render
-                ? $this->render($row['term'], $module, $type)
-                : $row['term'];
+            $result[$row['item']][] = $row['term'];
         }
         if (is_scalar($item)) {
             if (isset($result[$item])) {
@@ -141,16 +220,25 @@ class Api extends AbstractApi
     /**
      * Add tags of an item
      *
-     * @param string       $module Module name
-     * @param string       $item   Item identifier
-     * @param string       $type   Item type, default as ''
-     * @param array|string $tags   Tags to add
-     * @param int          $time   Time adding the tags
+     * @param string        $module Module name
+     * @param string        $item   Item identifier
+     * @param string        $type   Item type, default as ''
+     * @param array|string  $tags   Tags to add
+     * @param int           $time   Time adding the tags
+     * @param bool          $active Active source
      *
      * @return bool
      */
-    public function add($module, $item, $type, $tags, $time = 0)
+    public function add($module, $item, $type, $tags, $time = 0, $active = true)
     {
+        if (!$active) {
+            $result = Pi::api('draft', $this->module)
+                ->add($module, $item, $type, $tags, $time);
+
+            return $result;
+        }
+
+        $type = $type ?: '';
         $time = $time ?: time();
         $tags = $this->canonize($tags);
         if (!$tags) {
@@ -218,17 +306,27 @@ class Api extends AbstractApi
     /**
      * Update tag list of an item
      *
-     * @param string       $module Module name
-     * @param string       $item   Item identifier
-     * @param string       $type   Item type, default as ''
-     * @param array|string $tags   Tags to add
-     * @param int          $time   Time adding new tags
+     * @param string        $module Module name
+     * @param string        $item   Item identifier
+     * @param string        $type   Item type, default as ''
+     * @param array|string  $tags   Tags to add
+     * @param int           $time   Time adding new tags
+     * @param bool          $active Active source
      *
      * @return bool
      */
-    public function update($module, $item, $type, $tags, $time = 0)
+    public function update($module, $item, $type, $tags, $time = 0, $active = true)
     {
+        if (!$active) {
+            $result = Pi::api('draft', $this->module)
+                ->update($module, $item, $type, $tags, $time);
+
+            return $result;
+        }
+
+        $type       = $type ?: '';
         $tags       = $this->canonize($tags);
+
         $tagsExist  = $this->get($module, $item, $type);
         $tagsNew    = array_diff($tags, $tagsExist);
         if ($tagsNew) {
@@ -243,6 +341,10 @@ class Api extends AbstractApi
                 'type'      => $type,
             );
             Pi::model('link', $this->module)->delete($where);
+            $where = array(
+                'term'      => $tagsDelete,
+            );
+            Pi::model('tag', $this->module)->increment('count', $where, -1);
             $where = array(
                 'term'      => $tagsDelete,
                 'module'    => $module,
@@ -260,11 +362,20 @@ class Api extends AbstractApi
      * @param string $module Module name
      * @param string $item   Item identifier
      * @param string $type   Item type, default as ''
+     * @param bool   $active Active source
      *
      * @return bool
      */
-    public function delete($module, $item, $type = '')
+    public function delete($module, $item, $type = '', $active = true)
     {
+        if (!$active) {
+            $result = Pi::api('draft', $this->module)
+                ->delete($module, $item, $type);
+
+            return $result;
+        }
+
+        $type = $type ?: '';
         $tags = $this->get($module, $item, $type);
         if (!$tags) {
             return true;
@@ -290,11 +401,11 @@ class Api extends AbstractApi
     /**
      * Get list of items having a tag
      *
-     * @param string $tag    Tag
-     * @param string $module Module name
-     * @param string|null  $type   Item type, null for all types
-     * @param int          $limit  Limit
-     * @param int          $offset Offset
+     * @param string        $tag    Tag
+     * @param string        $module Module name
+     * @param string|null   $type   Item type, null for all types
+     * @param int           $limit  Limit
+     * @param int           $offset Offset
      *
      * @return array
      */
@@ -336,9 +447,9 @@ class Api extends AbstractApi
     /**
      * Get count of items of having a tag
      *
-     * @param string|array $tag    Tag or conditions
-     * @param string  $module Module name
-     * @param string $type   Item type
+     * @param string|array  $tag    Tag or conditions
+     * @param string        $module Module name
+     * @param string        $type   Item type
      *
      * @return int
      */
@@ -370,11 +481,11 @@ class Api extends AbstractApi
     /**
      * Get matched host tags for quick match, for typeahead purpose
      *
-     * @param string     $term   Term
-     * @param int        $limit  Limit
-     * @param string     $module Module name
-     * @param string     $type   Item type
-     * @param string|array $order
+     * @param string        $term   Term
+     * @param int           $limit  Limit
+     * @param string        $module Module name
+     * @param string        $type   Item type
+     * @param string|array  $order
      *
      * @return array
      */
@@ -419,14 +530,14 @@ class Api extends AbstractApi
     /**
      * Fetch top tags and item count
      *
-     * @param string $module Module name
+     * @param string        $module Module name
      * @param string|null   $type   Item type
-     * @param int   $limit  Return tag count
-     * @param int   $offset
+     * @param int           $limit  Return tag count
+     * @param int           $offset
      *
      * @return array
      */
-    public function top($limit = 10, $module = '', $type = '', $offset)
+    public function top($limit = 10, $module = '', $type = '', $offset = 0)
     {
         $result = array();
         $where = array();
@@ -465,5 +576,45 @@ class Api extends AbstractApi
         }
 
         return $result;
+    }
+
+    /**
+     * Activate tags of an item or multi-items
+     *
+     * @param string        $module Module name
+     * @param string|array  $item   Item identifier
+     * @param string        $type   Item type, default as ''
+     *
+     * @return string[]
+     */
+    public function enable($module, $item, $type = '')
+    {
+        $tags = $this->get($module, $item, $type, false);
+        if ($tags) {
+            $this->delete($module, $item, $type, false);
+            $this->add($module, $item, $type, $tags);
+        }
+
+        return true;
+    }
+
+    /**
+     * Deactivate tags of an item or multi-items
+     *
+     * @param string        $module Module name
+     * @param string|array  $item   Item identifier
+     * @param string        $type   Item type, default as ''
+     *
+     * @return string[]
+     */
+    public function disable($module, $item, $type = '')
+    {
+        $tags = $this->get($module, $item, $type);
+        if ($tags) {
+            $this->delete($module, $item, $type);
+            $this->add($module, $item, $type, $tags, false);
+        }
+
+        return true;
     }
 }

@@ -85,8 +85,6 @@ class DraftController extends ActionController
         );
         $maxImageSize = $config['max_image_size'];
         $maxMediaSize = $config['max_media_size'];
-        $defaultMediaImage   = Pi::service('asset')
-            ->getModuleAsset($config['default_media_image'], $module);
         $defaultFeatureThumb = Pi::service('asset')
             ->getModuleAsset($config['default_feature_thumb'], $module);
         $this->view()->assign(array(
@@ -103,7 +101,6 @@ class DraftController extends ActionController
             'maxSubjectLength'    => $config['max_subject_length'],
             'maxSubtitleLength'   => $config['max_subtitle_length'],
             'defaultSource'       => $config['default_source'],
-            'defaultMediaImage'   => $defaultMediaImage,
             'defaultFeatureThumb' => $defaultFeatureThumb,
             'contentImageWidth'   => $config['content_thumb_width'],
             'contentImageHeight'  => $config['content_thumb_height'],
@@ -290,20 +287,20 @@ class DraftController extends ActionController
         $timestamp = time();
         $article = array(
             'subject'      => $row->subject,
-            'subtitle'     => empty($row->subtitle) ? '' : $row->subtitle,
+            'subtitle'     => $row->subtitle ?: '',
             'summary'      => $row->summary,
             'content'      => $row->content,
             'markup'       => $row->markup,
             'uid'          => $row->uid,
             'author'       => $row->author,
-            'source'       => empty($row->source) ? '' : $row->source,
+            'source'       => $row->source ?: '',
             'pages'        => $row->pages,
             'category'     => $row->category,
             'status'       => Article::FIELD_STATUS_PUBLISHED,
             'active'       => 1,
             'time_submit'  => $row->time_submit,
             'time_publish' => $row->time_publish ?: $timestamp,
-            'time_update'  => $row->time_update ? $row->time_update : 0,
+            'time_update'  => $row->time_update ?: 0,
             'image'        => $row->image ?: '',
         );
         $rowArticle = $modelArticle->createRow($article);
@@ -362,9 +359,8 @@ class DraftController extends ActionController
             Pi::service('tag')->add(
                 $module,
                 $articleId,
-                null,
-                $row->tag,
-                $timestamp
+                '',
+                $row->tag
             );
         }
 
@@ -511,9 +507,8 @@ class DraftController extends ActionController
             Pi::service('tag')->update(
                 $module,
                 $articleId,
-                null,
-                $rowDraft->tag,
-                $timestamp
+                '',
+                $rowDraft->tag
             );
         }
 
@@ -576,16 +571,11 @@ class DraftController extends ActionController
             ? strtotime($data['time_update']) : 0;
         $data['time_submit']  = $data['time_submit'] ? $data['time_submit'] : 0;
         $data['time_save']    = time();
-
+        $data['author']       = (int) $data['author'];
+        
         if (isset($data['related'])) {
             $data['related'] = array_filter(
                 explode(self::TAG_DELIMITER, $data['related'])
-            );
-        }
-
-        if (isset($data['tag'])) {
-            $data['tag']     = array_filter(
-                explode(self::TAG_DELIMITER, $data['tag'])
             );
         }
         
@@ -677,25 +667,22 @@ class DraftController extends ActionController
         $action     = $this->getEvent()->getRouteMatch()->getParam('action');
 
         // Paginator
-        $paginator = Paginator::factory($totalCount);
-        $paginator->setItemCountPerPage($limit)
-                  ->setCurrentPageNumber($page)
-                  ->setUrlOptions(array(
-                    'page_param' => 'p',
-                    'router'     => $this->getEvent()->getRouter(),
-                    'route'      => $this->getEvent()
-                        ->getRouteMatch()
-                        ->getMatchedRouteName(),
-                    'params'     => array(
-                        'module'        => $module,
-                        'controller'    => 'draft',
-                        'action'        => $action,
-                        'status'        => $status,
-                        'from'          => $from,
-                        'where'         => urlencode(json_encode($options)),
-                        'limit'         => $limit,
-                    ),
-                ));
+        $paginator = Paginator::factory($totalCount, array(
+            'limit'       => $limit,
+            'page'        => $page,
+            'url_options' => array(
+                'page_param'    => 'p',
+                'params'        => array(
+                    'module'        => $module,
+                    'controller'    => 'draft',
+                    'action'        => $action,
+                    'status'        => $status,
+                    'from'          => $from,
+                    'where'         => urlencode(json_encode($options)),
+                    'limit'         => $limit,
+                ),
+            ),
+        ));
 
         $this->view()->assign(array(
             'data'      => $resultsetDraft,
@@ -997,10 +984,9 @@ class DraftController extends ActionController
         $data                 = (array) $row;
         $data['category']     = $data['category'] ?: $this->config('default_category');
         $data['related']      = $data['related'] ? implode(self::TAG_DELIMITER, $data['related']) : '';
-        $data['tag']          = isset($data['tag']) ? implode(self::TAG_DELIMITER, $data['tag']) : '';
-        $data['time_publish'] = $data['time_publish'] ? date('Y-m-d H:i:s', $data['time_publish']) : '';
-        $data['time_update']  = $data['time_update'] ? date('Y-m-d H:i:s', $data['time_update']) : '';
-
+        $data['time_publish'] = $data['time_publish'] ? _date($data['time_publish']) : '';
+        $data['time_update']  = $data['time_update'] ? _date($data['time_update']) : '';
+        
         $featureImage = $data['image'] ? Pi::url($data['image']) : '';
         $featureThumb = $data['image'] ? Pi::url(Media::getThumbFromOriginal($data['image'])) : '';
 
@@ -1707,7 +1693,7 @@ class DraftController extends ActionController
      */
     public function saveAssetAction()
     {
-        Pi::service('log')->active(false);
+        Pi::service('log')->mute();
         
         $type    = $this->params('type', 'attachment');
         $mediaId = $this->params('media', 0);
@@ -1759,7 +1745,7 @@ class DraftController extends ActionController
             'id'          => $row->id,
             'title'       => $rowMedia->title,
             'size'        => $rowMedia->size,
-            'downloadUrl' => $this->url('admin', array(
+            'downloadUrl' => $this->url('default', array(
                 'controller' => 'media',
                 'action'     => 'download',
                 'id'         => $mediaId,
@@ -1780,7 +1766,7 @@ class DraftController extends ActionController
      */
     public function removeAssetAction()
     {
-        Pi::service('log')->active(false);
+        Pi::service('log')->mute();
         
         $return = array('status' => false);
         $id = $this->params('id', 0);

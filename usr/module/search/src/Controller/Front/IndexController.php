@@ -271,6 +271,18 @@ class IndexController extends ActionController
         $modules        = (array) $in;
         $result         = array();
 
+        if ($this->config('search_in')) {
+            $modulesSpecified = explode(',', $this->config('search_in'));
+            $modulesSpecified = array_map('trim', $modulesSpecified);
+            $list = array();
+            foreach ($modulesSpecified as $name) {
+                if (isset($moduleSearch[$name])) {
+                    $list[$name] = $moduleSearch[$name];
+                }
+            }
+            $moduleSearch = $list;
+        }
+
         foreach ($moduleSearch as $name => $callback) {
             if ($modules && !in_array($name, $modules)) {
                 continue;
@@ -301,6 +313,19 @@ class IndexController extends ActionController
         $moduleSearch   = Pi::registry('search')->read();
         $moduleList     = Pi::registry('modulelist')->read();
         $modules        = array();
+
+        if ($this->config('search_in')) {
+            $modulesSpecified = explode(',', $this->config('search_in'));
+            $modulesSpecified = array_map('trim', $modulesSpecified);
+            $list = array();
+            foreach ($modulesSpecified as $name) {
+                if (isset($moduleSearch[$name])) {
+                    $list[$name] = $moduleSearch[$name];
+                }
+            }
+            $moduleSearch = $list;
+        }
+        
         foreach (array_keys($moduleSearch) as $name) {
             if (!isset($moduleList[$name])) {
                 continue;
@@ -338,7 +363,7 @@ class IndexController extends ActionController
      */
     protected function getService($service = '')
     {
-        $home = Pi::url('www');
+        $home = parse_url(Pi::url('www'), PHP_URL_HOST);
         //$home = 'pialog.org'; // For localhost test
 
         $googleQuery = function ($query) use ($home) {
@@ -355,12 +380,17 @@ class IndexController extends ActionController
 
             return $link;
         };
-	$_this = $this;
-        $baiduQuery = function ($query) use ($_this) {
+        $_this = $this;
+        $baiduQuery = function ($query) use ($home, $_this) {
             $code = $_this->config('baidu_code');
-            $pattern = 'http://zhannei.baidu.com/cse/search?s=%s&q=%s';
-            //$pattern = 'http://www.baidu.com/s?wd=site:(%s)+%s';
-            $link = sprintf($pattern, urlencode($code), urlencode($query));
+            if ($code) {
+                $pattern = 'http://zhannei.baidu.com/cse/search?s=%s&q=%s';
+                $link = sprintf($pattern, urlencode($code), urlencode($query));
+            } else {
+                $pattern = 'http://www.baidu.com/s?wd=site:(%s)+%s';
+                $link = sprintf($pattern, urlencode($home), urlencode($query));
+
+            }
 
             return $link;
         };
@@ -377,18 +407,18 @@ class IndexController extends ActionController
                 'title' => __('Google'),
                 'url'   => $googleQuery,
             ),
-            'bing' => array(
+/*            'bing' => array(
                 'title' => __('Bing'),
                 'url'   => $bingQuery,
-            ),
+            ),*/
             'baidu' => array(
                 'title' => __('Baidu'),
                 'url'   => $baiduQuery,
             ),
-            'sogou' => array(
+/*            'sogou' => array(
                 'title' => __('Sogou'),
                 'url'   => $sogouQuery,
-            ),
+            ),*/
         );
 
         if ($service) {
