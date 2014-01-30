@@ -31,14 +31,17 @@ class Category extends AbstractRegistry
         $list = array();
 
         $model  = Pi::model('category', $this->module);
-        $rowset = $model->select(array());
+        $select = $model->select()->order('order ASC');
+        $rowset = $model->selectWith($select);
         foreach ($rowset as $row) {
+            $id = (int) $row['id'];
             $item = array(
+                'id'        => $id,
                 'title'     => $row['title'],
                 'icon'      => $row['icon'],
                 'modules'   => $row['modules'],
             );
-            $list[] = $item;
+            $list[$id] = $item;
         }
 
         return $list;
