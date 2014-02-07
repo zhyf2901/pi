@@ -52,28 +52,28 @@ class AssetController extends ActionController
     }
 
     /**
-     * Publish assets of a comoponent
+     * Publish assets of a component
      *
      * @return array Result pair of status and message
      */
     public function publishAction()
     {
-        $type = $this->params('type');
+        $type = $this->params('type', 'module');
         $name = $this->params('name');
-        if ('module' == $type) {
-            $source = sprintf(
-                '%s/%s',
-                $type,
-                Pi::service('module')->directory($name)
-            );
-        } else {
-            $source = sprintf('%s/%s', $type, $name);
-        }
-        $target = sprintf('%s/%s', $type, $name);
-        $status = (int) Pi::service('asset')->publish($source, $target);
-        if ($status && 'module' != $type) {
-            Pi::service('asset')->removeCustom($name);
-            Pi::service('asset')->publishCustom($name);
+        switch ($type) {
+            case 'module':
+                $status = Pi::service('asset')->remove('module/' . $name);
+                $status = Pi::service('asset')->publishModule($name);
+                break;
+            case 'theme':
+                $status = Pi::service('asset')->remove('theme/' . $name);
+                $status = Pi::service('asset')->publishTheme($name);
+                break;
+            default:
+                $component = sprintf('%s/%s', $type, $name);
+                $status = Pi::service('asset')->remove($component);
+                $status = Pi::service('asset')->publish($component);
+                break;
         }
         clearstatcache();
         if (!$status) {
@@ -101,23 +101,24 @@ class AssetController extends ActionController
         $modules = Pi::registry('module')->read();
         $themes = Pi::registry('theme')->read();
 
+        /*
         $assetList = array();
         $assetCustom = array();
         foreach ($modules as $name => $item) {
-            $assetList['module-' . $name] = array(
-                'source'    => 'module/' . $item['directory'],
+            $moduleList[$name] = array(
+                //'source'    => 'module/' . $item['directory'],
                 'title'     => sprintf(_a('module %s'), $item['title']),
             );
         }
         foreach ($themes as $name => $item) {
-            $assetList['theme-' . $name] = array(
+            $themeList[$name] = array(
                 'source'    => 'theme/' . $name,
                 'title'     => sprintf(_a('theme %s'), $item['title']),
             );
-            $assetCustom[] = $name;
+            //$assetCustom[] = $name;
         }
 
-        // Remove deprecated components
+        // Remove published module and theme assets
         $iterator = new \DirectoryIterator(Pi::path('asset'));
         foreach ($iterator as $fileinfo) {
             if (!$fileinfo->isDir() || $fileinfo->isDot()) {
@@ -133,18 +134,43 @@ class AssetController extends ActionController
             }
         }
 
-        // Republish all module/theme components
-        $erroneous = array();
-        foreach ($assetList as $target => $item) {
-            $target = str_replace('-', '/', $target);
-            $status = Pi::service('asset')->publish($item['source'], $target);
-            if (!$status) {
-                $erroneous[] = $item['title'];
+        $iterator = new \DirectoryIterator(Pi::path('public'));
+        foreach ($iterator as $fileinfo) {
+            if (!$fileinfo->isDir() || $fileinfo->isDot()) {
+                continue;
+            }
+            $directory = $fileinfo->getFilename();
+            if (('module-' == substr($directory, 0, 7)
+                    || 'theme-' == substr($directory, 0, 6))
+                && !isset($assetList[$directory])
+            ) {
+                $component = str_replace('-', '/', $directory);
+                Pi::service('asset')->remove($component);
             }
         }
-        foreach ($assetCustom as $name) {
-            Pi::service('asset')->removeCustom($name);
-            Pi::service('asset')->publishCustom($name);
+        */
+
+        // Republish all module/theme components
+        $erroneous = array();
+        foreach (array_keys($modules) as $name) {
+            $status = Pi::service('asset')->remove('module/' . $name);
+            if (!$status) {
+                $erroneous[] = 'module-remove-' . $name;
+            }
+            $status = Pi::service('asset')->publishModule($name);
+            if (!$status) {
+                $erroneous[] = 'module-publish-' . $name;
+            }
+        }
+        foreach (array_keys($themes) as $name) {
+            $status = Pi::service('asset')->remove('theme/' . $name);
+            if (!$status) {
+                $erroneous[] = 'theme-remove-' . $name;
+            }
+            $status = Pi::service('asset')->publishTheme($name);
+            if (!$status) {
+                $erroneous[] = 'theme-publish-' . $name;
+            }
         }
         clearstatcache();
 

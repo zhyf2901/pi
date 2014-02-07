@@ -19,44 +19,50 @@ use Pi\Form\Form as BaseForm;
  */
 class LoginForm extends BaseForm
 {
+    protected $config = array();
+
+    /**
+     * Constructor
+     *
+     * @param string $name
+     * @param array $config
+     */
+    public function __construct($name, array $config = array())
+    {
+        if (!$config) {
+            $config = Pi::user()->config();
+        }
+        $this->config  = $config;
+        parent::__construct($name);
+    }
+
     /**
      * {@inheritDoc}
      */
     public function init()
     {
-        $config = Pi::registry('config')->read('', 'user');
+        $config = $this->config;
 
+        // Get config data.
         $this->add(array(
-            'type'          => 'text',
             'name'          => 'identity',
+            'type'          => 'Pi\Form\Element\LoginField',
             'options'       => array(
-                'label' => __('Username'),
+                'fields'    => $config['login_field'],
             ),
         ));
 
         $this->add(array(
-            'type'          => 'password',
             'name'          => 'credential',
             'options'       => array(
                 'label' => __('Password'),
             ),
+            'attributes'    => array(
+                'type'  => 'password',
+            )
         ));
 
-        if ($config['rememberme']) {
-            $this->add(array(
-                'name'          => 'rememberme',
-                'type'          => 'checkbox',
-                'options'       => array(
-                    'label' => __('Remember me'),
-                ),
-                'attributes'    => array(
-                    'value'         => '1',
-                    'description'   => __('Keep me logged in.')
-                )
-            ));
-        }
-
-        if ($config['login_captcha']) {
+        if (!empty($config['login_captcha'])) {
             $this->add(array(
                 'name'          => 'captcha',
                 'type'          => 'captcha',
@@ -67,42 +73,41 @@ class LoginForm extends BaseForm
             ));
         }
 
+        if (!empty($config['rememberme'])) {
+            $this->add(array(
+                'name'          => 'rememberme',
+                'type'          => 'checkbox',
+                'options'       => array(
+                    'label' => __('Remember me'),
+                ),
+                'attributes'    => array(
+                    'value'         => '1',
+                    'description'   => __('Remember me')
+                )
+            ));
+        }
+
         $this->add(array(
             'name'  => 'security',
             'type'  => 'csrf',
         ));
 
-        /*
-        $request = Pi::engine()->application()->getRequest();
-        $redirect = $request->getQuery('redirect');
-        if (null === $redirect) {
-            $redirect = $request->getServer('HTTP_REFERER')
-                ?: $request->getRequestUri();
-        }
+        $redirect = _get('redirect') ?: Pi::service('url')->getRequestUri();
         $redirect = $redirect ? rawurlencode($redirect) : '';
-        */
         $this->add(array(
             'name'  => 'redirect',
             'type'  => 'hidden',
-            /*
             'attributes'    => array(
                 'value' => $redirect,
             ),
-            */
         ));
-
-        /*
-        $this->add(array(
-            'name'  => 'section',
-            'type'  => 'hidden',
-        ));
-        */
 
         $this->add(array(
             'name'          => 'submit',
-             'type'         => 'submit',
             'attributes'    => array(
+                'type'  => 'submit',
                 'value' => __('Login'),
+                'class' => 'btn btn-primary',
             )
         ));
     }

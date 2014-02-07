@@ -33,6 +33,10 @@ $config['category'] = array(
         'title'     => _t('User account'),
     ),
     array(
+        'name'      => 'admin',
+        'title'     => _t('Admin login'),
+    ),
+    array(
         'name'      => 'text',
         'title'     => _t('Text processing'),
     ),
@@ -107,17 +111,6 @@ $config['item'] = array(
         'category'      => 'general',
     ),
 
-    /*
-    'asset_versioning'  => array(
-        'title'         => _t('Enable asset versions'),
-        'description'   => _t('Append version to asset URLs. It is suggested to trun off in production environments for performance consideration.'),
-        'edit'          => 'checkbox',
-        'value'         => 0,
-        'filter'        => 'int',
-        'category'      => 'general',
-    ),
-    */
-
     'theme'         => array(
         'title'         => _t('Theme'),
         'value'         => 'default',
@@ -146,24 +139,210 @@ $config['item'] = array(
                 ),
             ),
         ),
-        'value'         => 'development',
+        'value'         => Pi::environment(),
         'category'      => 'general',
+    ),
+
+    // User account
+
+    'uname_format'  => array(
+        'title'         => _t('Username format'),
+        'description'   => _t('Format of username for registration.'),
+        'edit'          => array(
+            'type'      => 'select',
+            'options'   => array(
+                'options'       => array(
+                    'strict'    => _t('Strict: alphabet or number only'),
+                    'medium'    => _t('Medium: ASCII characters'),
+                    'loose'     => _t('Loose: multi-byte characters'),
+                ),
+            ),
+        ),
+        'filter'        => 'string',
+        'value'         => 'medium',
+        'category'      => 'user',
+    ),
+
+    'uname_min'     => array(
+        'title'         => _t('Minimum username'),
+        'description'   => _t('Minimum length of username for user registration'),
+        'value'         => 3,
+        'filter'        => 'number_int',
+        'category'      => 'user',
+    ),
+
+    'uname_max'     => array(
+        'title'         => _t('Maximum username'),
+        'description'   => _t('Maximum length of username for user registration'),
+        'value'         => 32,
+        'filter'        => 'number_int',
+        'category'      => 'user',
+    ),
+
+    'password_min'  => array(
+        'title'         => _t('Minimum password'),
+        'description'   => _t('Minimum length of password for user registration'),
+        'value'         => 5,
+        'filter'        => 'number_int',
+        'category'      => 'user',
+    ),
+
+    'password_max'  => array(
+        'title'         => _t('Maximum password'),
+        'description'   => _t('Maximum length of password for user registration'),
+        'value'         => 32,
+        'filter'        => 'number_int',
+        'category'      => 'user',
+    ),
+
+    'uname_backlist'    => array(
+        'title'         => _t('Username backlist'),
+        'description'   => _t('Reserved and forbidden username list. Separate each with a <strong>|</strong>, regexp syntax is allowed.'),
+        'edit'          => 'textarea',
+        'value'         => 'webmaster|^pi|^admin',
+        'category'      => 'user',
+    ),
+
+    'email_backlist'    => array(
+        'title'         => _t('Email backlist'),
+        'description'   => _t('Forbidden username list. Separate each with a <strong>|</strong>, regexp syntax is allowed.'),
+        'edit'          => 'textarea',
+        'value'         => 'pi-engine.org$',
+        'category'      => 'user',
+    ),
+
+    'rememberme'        => array(
+        'title'         => _t('Remember me'),
+        'description'   => _t('Days to remember login, 0 for disable.'),
+        'value'         => 14,
+        'filter'        => 'number_int',
+        'category'      => 'user',
+    ),
+
+    'login_field'      => array(
+        'title'         => _t('Login field'),
+        'description'   => _t('Identity field(s) for authentication.'),
+        'edit'          => array(
+            'type'      => 'select',
+            'attributes'    => array(
+                'multiple'  => true,
+            ),
+            'options'   => array(
+                'value_options'   => array(
+                    'identity'  => _t('Username'),
+                    'email'     => _t('Email'),
+                ),
+            ),
+        ),
+        'filter'        => 'array',
+        'value'         => array('identity'),
+        'category'      => 'user',
+    ),
+
+    'login_attempts'      => array(
+        'title'         => _t('Maximum attempts'),
+        'description'   => _t('Maximum attempts allowed to try for user login'),
+        'value'         => 5,
+        'filter'        => 'number_int',
+        'category'      => 'user',
+    ),
+
+    'login_disable'     => array(
+        'title'         => _t('Login disable'),
+        'description'   => _t('Disable user login'),
+        'edit'          => 'checkbox',
+        'value'         => 0,
+        'filter'        => 'number_int',
+        'category'      => 'user',
+    ),
+
+    'register_disable'  => array(
+        'title'         => _t('Register disable'),
+        'description'   => _t('Disable user registration'),
+        'edit'          => 'checkbox',
+        'value'         => 0,
+        'filter'        => 'number_int',
+        'category'      => 'user',
+    ),
+
+    'login_captcha'       => array(
+        'title'         => _t('Login CAPTCHA'),
+        'description'   => _t('Enable CAPTCHA for user login'),
+        'edit'          => 'checkbox',
+        'value'         => 0,
+        'filter'        => 'number_int',
+        'category'      => 'user',
+    ),
+
+    'register_captcha'  => array(
+        'title'         => _t('Register CAPTCHA'),
+        'description'   => _t('Enable CAPTCHA for user registration'),
+        'edit'          => 'checkbox',
+        'value'         => 1,
+        'filter'        => 'number_int',
+        'category'      => 'user',
+    ),
+
+    // Admin login section
+
+    'admin_login_attempts'      => array(
+        'title'         => _t('Maximum attempts'),
+        'description'   => _t('Maximum attempts allowed to try for admin login'),
+        'value'         => 5,
+        'filter'        => 'number_int',
+        'category'      => 'admin',
+    ),
+
+    'admin_rememberme'        => array(
+        'title'         => _t('Remember me'),
+        'description'   => _t('Days to remember login, 0 for disable.'),
+        'value'         => 14,
+        'filter'        => 'number_int',
+        'category'      => 'admin',
+    ),
+
+    'admin_login_field'      => array(
+        'title'         => _t('Login field'),
+        'description'   => _t('Identity field(s) for admin authentication.'),
+        'edit'          => array(
+            'type'      => 'select',
+            'attributes'    => array(
+                'multiple'  => true,
+            ),
+            'options'   => array(
+                'value_options'   => array(
+                    'identity'  => _t('Username'),
+                    'email'     => _t('Email'),
+                ),
+            ),
+        ),
+        'filter'        => 'array',
+        'value'         => array('identity'),
+        'category'      => 'admin',
+    ),
+
+    'admin_login_disable'     => array(
+        'title'         => _t('Login disable'),
+        'description'   => _t('Disable admin login'),
+        'edit'          => 'checkbox',
+        'value'         => 0,
+        'filter'        => 'number_int',
+        'category'      => 'admin',
+    ),
+
+    'admin_login_captcha'       => array(
+        'title'         => _t('Login CAPTCHA'),
+        'description'   => _t('Enable CAPTCHA for admin login'),
+        'edit'          => 'checkbox',
+        'value'         => 0,
+        'filter'        => 'number_int',
+        'category'      => 'admin',
     ),
 
     // Meta section
 
-    /*
-    'copyright'     => array(
-        'title'         => _t('Meta copyright'),
-        'description'   => _t('The copyright meta tag defines any copyright statements you wish to disclose about your web page documents.'),
-        'edit'          => 'text',
-        'value'         => 'Copyright &copy; ' . date('Y'),
-        'category'      => 'meta',
-    ),
-    */
-
     'author'        => array(
-        'title'         => _t('Meta author'),
+        'title'         => '`author`',
         'description'   => _t('The author meta tag defines the name of the author of the document being read. Supported data formats include the name, email address of the webmaster, company name or URL.'),
         'edit'          => 'text',
         'value'         => 'Pi Engine',
@@ -171,7 +350,7 @@ $config['item'] = array(
     ),
 
     'generator'     => array(
-        'title'         => _t('Meta generator'),
+        'title'         => '`generator`',
         'description'   => _t('Generator of the document being read.'),
         'edit'          => 'text',
         'value'         => 'Pi Engine',
@@ -179,7 +358,7 @@ $config['item'] = array(
     ),
 
     'keywords'      => array(
-        'title'         => _t('Meta keywords'),
+        'title'         => '`keywords`',
         'description'   => _t('The keywords meta tag is a series of keywords that represents the content of your site. Separated keywords by a comma.'),
         'edit'          => 'textarea',
         'value'         => 'Pi Engine,Web application,PHP,Zend Framework',
@@ -187,14 +366,14 @@ $config['item'] = array(
     ),
 
     'description'   => array(
-        'title'         => _t('Meta description'),
+        'title'         => '`description`',
         'description'   => _t('The description meta tag is a general description of what is contained in your web page'),
         'edit'          => 'textarea',
         'value'         => 'Pi Engine is an extensible development engine for web and mobile applications written in PHP.',
         'category'      => 'meta',
     ),
 
-    // Internationalizaiton section
+    // I18n section
 
     'number_style'    => array(
         'title'         => _t('Default number style'),
@@ -351,127 +530,7 @@ $config['item'] = array(
         'category'      => 'text',
     ),
 
-    // User account
-
-    'uname_format'  => array(
-        'title'         => _t('Username format'),
-        'description'   => _t('Format of username for registration.'),
-        'edit'          => array(
-            'type'      => 'select',
-            'options'   => array(
-                'options'       => array(
-                    'strict'    => _t('Strict: alphabet or number only'),
-                    'medium'    => _t('Medium: ASCII characters'),
-                    'loose'     => _t('Loose: multi-byte characters'),
-                ),
-            ),
-        ),
-        'filter'        => 'string',
-        'value'         => 'medium',
-        'category'      => 'user',
-    ),
-
-    'uname_min'     => array(
-        'title'         => _t('Minmum username'),
-        'description'   => _t('Minmum length of username for user registration'),
-        'value'         => 3,
-        'filter'        => 'number_int',
-        'category'      => 'user',
-    ),
-
-    'uname_max'     => array(
-        'title'         => _t('Maximum username'),
-        'description'   => _t('Maximum length of username for user registration'),
-        'value'         => 32,
-        'filter'        => 'number_int',
-        'category'      => 'user',
-    ),
-
-    'password_min'  => array(
-        'title'         => _t('Minmum password'),
-        'description'   => _t('Minmum length of password for user registration'),
-        'value'         => 5,
-        'filter'        => 'number_int',
-        'category'      => 'user',
-    ),
-
-    'password_max'  => array(
-        'title'         => _t('Maximum password'),
-        'description'   => _t('Maximum length of password for user registration'),
-        'value'         => 32,
-        'filter'        => 'number_int',
-        'category'      => 'user',
-    ),
-
-    'uname_backlist'    => array(
-        'title'         => _t('Username backlist'),
-        'description'   => _t('Reserved and forbidden username list. Separate each with a <strong>|</strong>, regexp syntax is allowed.'),
-        'edit'          => 'textarea',
-        'value'         => 'webmaster|^pi|^admin',
-        'category'      => 'user',
-    ),
-
-    'email_backlist'    => array(
-        'title'         => _t('Email backlist'),
-        'description'   => _t('Forbidden username list. Separate each with a <strong>|</strong>, regexp syntax is allowed.'),
-        'edit'          => 'textarea',
-        'value'         => 'pi-engine.org$',
-        'category'      => 'user',
-    ),
-
-    'rememberme'        => array(
-        'title'         => _t('Remember me'),
-        'description'   => _t('Days to remember login, 0 for disable.'),
-        'value'         => 14,
-        'filter'        => 'number_int',
-        'category'      => 'user',
-    ),
-
-    'attempts'      => array(
-        'title'         => _t('Maximum attempts'),
-        'description'   => _t('Maximum attempts allowed to try for user login'),
-        'value'         => 5,
-        'filter'        => 'number_int',
-        'category'      => 'user',
-    ),
-
-    'login_disable'     => array(
-        'title'         => _t('Login disable'),
-        'description'   => _t('Disable user login'),
-        'edit'          => 'checkbox',
-        'value'         => 0,
-        'filter'        => 'number_int',
-        'category'      => 'user',
-    ),
-
-    'register_disable'  => array(
-        'title'         => _t('Register disable'),
-        'description'   => _t('Disable user registration'),
-        'edit'          => 'checkbox',
-        'value'         => 0,
-        'filter'        => 'number_int',
-        'category'      => 'user',
-    ),
-
-    'login_captcha'       => array(
-        'title'         => _t('Login CAPTCHA'),
-        'description'   => _t('Enable CAPTCHA for user login'),
-        'edit'          => 'checkbox',
-        'value'         => 0,
-        'filter'        => 'number_int',
-        'category'      => 'user',
-    ),
-
-    'register_captcha'  => array(
-        'title'         => _t('Register CAPTCHA'),
-        'description'   => _t('Enable CAPTCHA for user registration'),
-        'edit'          => 'checkbox',
-        'value'         => 1,
-        'filter'        => 'number_int',
-        'category'      => 'user',
-    ),
-
-    // Orphan configs
+    // Orphan configs, not displayed in preference edit page
     'theme_module'      => array(
         'title'         => _t('Module themes'),
         'description'   => _t('Themes for modules.'),

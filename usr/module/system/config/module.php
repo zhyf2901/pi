@@ -21,7 +21,7 @@ return array(
         'description'   =>
             _a('For administration of core functions of the site.'),
         // Version number, required
-        'version'       => '3.3.1',
+        'version'       => '3.4.0',
         // Distribution license, required
         'license'       => 'New BSD',
         // Logo image, for admin, optional
@@ -36,7 +36,7 @@ return array(
         // Module is ready for clone? Default as false
         'clonable'      => false,
         //font-awesome: http://fontawesome.io/icons/
-        'icon'          => 'fa fa-tachometer'
+        'icon'          => 'fa-tachometer'
     ),
     // Author information
     'author'    => array(

@@ -61,9 +61,7 @@ class Local extends AbstractStrategy
     public function bind()
     {
         $identity = $this->getIdentity();
-        Pi::service('user')->bind($identity, 'identity');
-
-        return;
+        Pi::service('user')->bind($identity, $this->getIdentityField());
     }
 
     /**
@@ -130,7 +128,7 @@ class Local extends AbstractStrategy
     {
         $class      = $config['class'];
         $options    = isset($config['options']) ? $config['options'] : array();
-        $adapter = new $class;
+        $adapter    = new $class;
         if ($options) {
             $adapter->setOptions($options);
         }
@@ -164,19 +162,6 @@ class Local extends AbstractStrategy
     /**
      * {@inheritDoc}
      */
-    public function getIdentity()
-    {
-        $storage = $this->getStorage();
-        if ($storage->isEmpty()) {
-            return null;
-        }
-
-        return $storage->read();
-    }
-
-    /**
-     * {@inheritDoc}
-     */
     public function clearIdentity()
     {
         $this->getStorage()->clear();
@@ -185,9 +170,12 @@ class Local extends AbstractStrategy
     /**
      * {@inheritDoc}
      */
-    public function authenticate($identity, $credential)
+    public function authenticate($identity, $credential, $column = '')
     {
         $adapter = $this->getAdapter();
+        if ($column && method_exists($adapter, 'setIdentityColumn')) {
+            $adapter->setIdentityColumn($column);
+        }
         $adapter->setIdentity($identity);
         $adapter->setCredential($credential);
         $result = $adapter->authenticate();
@@ -197,8 +185,9 @@ class Local extends AbstractStrategy
         }
 
         if ($result->isValid()) {
-            $this->getStorage()->write($result->getIdentity());
             $result->setData($adapter->getResultRow());
+            $identity = $result->getData($this->getIdentityField());
+            $this->getStorage()->write($identity);
         }
 
         return $result;

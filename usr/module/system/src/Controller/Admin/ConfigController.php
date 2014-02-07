@@ -35,8 +35,6 @@ class ConfigController extends ComponentController
      */
     public function indexAction()
     {
-        $messageSuccessful = '';
-
         if ($this->request->isPost()) {
             $module = $this->params()->fromPost('name');
         } else {
@@ -50,9 +48,16 @@ class ConfigController extends ComponentController
         $updateLanguage = false;
         $updateEnv      = false;
         if ($module) {
+            $where = array('module' => $module, 'visible' => 1);
+            if ('system' == $module
+                && Pi::service('module')->isActive('user')
+            ) {
+                $where['category <> ?'] = 'user';
+            }
+
             $model = Pi::model('config');
             $select = $model->select()
-                ->where(array('module' => $module, 'visible' => 1))
+                ->where($where)
                 ->order(array('order ASC'));
             $rowset = $model->selectWith($select);
             $configs = array();
@@ -61,7 +66,6 @@ class ConfigController extends ComponentController
             }
             if ($configs) {
                 $groups = array();
-                //$configsByCategory = array();
                 $select = Pi::model('config_category')->select()
                     ->where(array('module' => $module))
                     ->order(array('order ASC'));
@@ -70,13 +74,33 @@ class ConfigController extends ComponentController
                 if ($categories->count() > 1) {
                     foreach ($categories as $category) {
                         $groups[$category->name] = array(
-                            'label'     => $category->title,
+                            'label'     => _a($category->title),
                             'elements'  => array(),
                         );
                     }
+                    $generalList = array();
                     foreach ($configs as $config) {
-                        $groups[$config->category]['elements'][] =
-                            $config->name;
+                        $category = $config->category;
+                        if (isset($groups[$category])) {
+                            $groups[$category]['elements'][] = $config->name;
+                        } else {
+                            $generalList[] = $config->name;
+                        }
+                    }
+                    if ($generalList) {
+                        if (isset($groups['general'])) {
+                            $groups['general']['elements'] += $generalList;
+                        } else {
+                            array_unshift($groups, array(
+                                'label'     => _a('General'),
+                                'elements'  => $generalList,
+                            ));
+                        }
+                    }
+                    foreach (array_keys($groups) as $group) {
+                        if (empty($groups[$group]['elements'])) {
+                            unset($groups[$group]);
+                        }
                     }
                 }
                 $this->view()->assign('configs', $configs);
@@ -159,21 +183,9 @@ class ConfigController extends ComponentController
             }
         }
 
-        //$this->view()->assign('success', $messageSuccessful);
-
-        $model = Pi::model('config');
-        $select = $model->select()->group('module')
-            ->columns(array('count' => new Expression('count(*)'), 'module'));
-        $rowset = $model->selectWith($select);
-        $configCounts = array();
-        foreach ($rowset as $row) {
-            $configCounts[$row->module] = $row->count;
-        }
-
         $this->view()->assign('name', $module);
 
         $this->view()->assign('title', _a('Module configurations'));
-        //$this->view()->setTemplate('config-module');
     }
 
     /**

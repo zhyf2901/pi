@@ -16,10 +16,10 @@ return array(
     'meta'  => array(
         'title'         => _a('User'),
         'description'   => _a('User profile and services.'),
-        'version'       => '1.2.0',
+        'version'       => '1.3.0-beta',
         'license'       => 'New BSD',
         'demo'          => 'http://demo.pialog.org',
-        'icon'          => 'fa fa-user',
+        'icon'          => 'fa-user',
     ),
     // Author information
     'author'    => array(

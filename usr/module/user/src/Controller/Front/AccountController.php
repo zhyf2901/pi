@@ -30,7 +30,9 @@ class AccountController extends ActionController
     {
         // Check login in
         Pi::service('authentication')->requireLogin();
+        Pi::api('profile', 'user')->requireComplete();
         $uid = Pi::user()->getId();
+        /*
         // Check profile complete
         if ($this->config('profile_complete_form')) {
             $completeProfile = Pi::api('user', 'user')->get($uid, 'level');
@@ -45,6 +47,7 @@ class AccountController extends ActionController
                 return;
             }
         }
+        */
 
         // Get identity, email, name
         $data = Pi::api('user', 'user')->get(
@@ -290,7 +293,7 @@ class AccountController extends ActionController
         );
 
         $query = array();
-        foreach (array('email', 'name') as $param) {
+        foreach (array('email', 'name', 'identity') as $param) {
             $val = $this->params($param);
             if ($val) {
                 $query[$param] = $val;
@@ -324,7 +327,7 @@ class AccountController extends ActionController
         $status = $row ? 1 : 0;
 
         return array(
-            'status' => $status
+            'status' => $status,
         );
     }
 

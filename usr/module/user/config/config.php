@@ -14,17 +14,27 @@
  */
 
 $category = array(
+    /*
     array(
         'name'  => 'general',
         'title' => _t('General'),
     ),
+    */
     array(
-        'name'  => 'avatar',
-        'title' => _t('Avatar'),
+        'name'      => 'login',
+        'title'     => _t('Login'),
+    ),
+    array(
+        'name'      => 'register',
+        'title'     => _t('Registration'),
     ),
     array(
         'name'      => 'account',
-        'title'     => _t('User account'),
+        'title'     => _t('Account'),
+    ),
+    array(
+        'name'  => 'avatar',
+        'title' => _t('Avatar'),
     ),
 );
 
@@ -35,20 +45,122 @@ $config = array(
         'value'  => 10,
         'filter' => 'int',
     ),
-    'register_form' => array(
-        'title'         => _t('Register form config file name'),
-        'description'   => _t('Set it only if necessary.'),
-        'value'         => '', // 'register',
+
+    'require_profile_complete' => array(
+        'title'         => _t('Profile complete'),
+        'description'   => _t('Require user to complete profile data.'),
+        'edit'          => 'checkbox',
+        'value'         => 0,
+        'filter'        => 'number_int',
     ),
-    'register_complete_form' => array(
-        'title'         => _t('Register complete form config file name'),
-        'description'   => _t('Set it only if necessary.'),
-        'value'         => '',
+
+    // Login
+    'login_disable'     => array(
+        'title'         => _t('Login disable'),
+        'description'   => _t('Disable user login'),
+        'edit'          => 'checkbox',
+        'value'         => 0,
+        'filter'        => 'number_int',
+        'category'      => 'login',
     ),
-    'profile_complete_form' => array(
-        'title'         => _t('Profile complete form config file name'),
-        'description'   => _t('Set it only if necessary.'),
-        'value'         => '', // 'profile.complete',
+
+    'login_captcha'       => array(
+        'title'         => _t('Login CAPTCHA'),
+        'description'   => _t('Enable CAPTCHA for user login'),
+        'edit'          => 'checkbox',
+        'value'         => 0,
+        'filter'        => 'number_int',
+        'category'      => 'login',
+    ),
+
+    'rememberme'        => array(
+        'title'         => _t('Remember me'),
+        'description'   => _t('Days to remember login, 0 for disable.'),
+        'value'         => 14,
+        'filter'        => 'number_int',
+        'category'      => 'login',
+    ),
+
+    'login_field'      => array(
+        'title'         => _t('Login field'),
+        'description'   => _t('Identity field(s) for authentication.'),
+        'edit'          => array(
+            'type'      => 'select',
+            'attributes'    => array(
+                'multiple'  => true,
+            ),
+            'options'   => array(
+                'value_options'   => array(
+                    'identity'  => _t('Username'),
+                    'email'     => _t('Email'),
+                ),
+            ),
+        ),
+        'filter'        => 'array',
+        'value'         => array('identity'),
+        'category'      => 'login',
+    ),
+
+    'login_attempts'      => array(
+        'title'         => _t('Maximum attempts'),
+        'description'   => _t('Maximum attempts allowed to try for user login'),
+        'value'         => 5,
+        'filter'        => 'number_int',
+        'category'      => 'login',
+    ),
+
+    // Register
+    'register_disable'  => array(
+        'title'         => _t('Register disable'),
+        'description'   => _t('Disable user registration'),
+        'edit'          => 'checkbox',
+        'value'         => 0,
+        'filter'        => 'number_int',
+        'category'      => 'register',
+    ),
+
+    'register_captcha'  => array(
+        'title'         => _t('Register CAPTCHA'),
+        'description'   => _t('Enable CAPTCHA for user registration'),
+        'edit'          => 'checkbox',
+        'value'         => 1,
+        'filter'        => 'number_int',
+        'category'      => 'register',
+    ),
+
+    'require_register_complete' => array(
+        'title'         => _t('Register complete'),
+        'description'   => _t('Require user to complete register data in an extra form.'),
+        'edit'          => 'checkbox',
+        'value'         => 0,
+        'filter'        => 'number_int',
+        'category'      => 'register',
+    ),
+
+    'register_activation'  => array(
+        'title'         => _t('Activation'),
+        'description'   => _t('Activation mode for user accounts'),
+        'edit'          => array(
+            'type'      => 'select',
+            'options'   => array(
+                'options'       => array(
+                    'auto'      => _t('Automatically activated'),
+                    'email'     => _t('Activated by user email'),
+                    'approval'  => _t('Activated by admin approval'),
+                ),
+            ),
+        ),
+        'filter'        => 'string',
+        'value'         => 'email',
+        'category'      => 'register',
+    ),
+
+    'activation_expiration' => array(
+        'title'         => _t('Activation expiration'),
+        'description'   => _t('Expiration time for activation email (in hours).'),
+        'value'         => 24,
+        'filter'        => 'number_int',
+        'category'      => 'register',
     ),
 
     // User account
@@ -137,7 +249,7 @@ $config = array(
 
     'uname_backlist'    => array(
         'title'         => _t('Username backlist'),
-        'description'   => _t('Reserved and forbidden username list. Separate each with a <strong>|</strong>, regexp syntax is allowed.'),
+        'description'   => _t('Reserved and forbidden username list, separated with `|`, regexp syntax is allowed.'),
         'edit'          => 'textarea',
         'value'         => 'webmaster|^pi|^admin',
         'category'      => 'account',
@@ -145,7 +257,7 @@ $config = array(
 
     'name_backlist'    => array(
         'title'         => _t('Display backlist'),
-        'description'   => _t('Reserved and forbidden display name list. Separate each with a <strong>|</strong>, regexp syntax is allowed.'),
+        'description'   => _t('Reserved and forbidden display name list, separated with `|`, regexp syntax is allowed.'),
         'edit'          => 'textarea',
         'value'         => 'webmaster|^pi|^admin',
         'category'      => 'account',
@@ -153,64 +265,12 @@ $config = array(
 
     'email_backlist'    => array(
         'title'         => _t('Email backlist'),
-        'description'   => _t('Forbidden email list. Separate each with a <strong>|</strong>, regexp syntax is allowed.'),
+        'description'   => _t('Forbidden email list, separated with `|`, regexp syntax is allowed.'),
         'edit'          => 'textarea',
         'value'         => 'pi-engine.org$',
         'category'      => 'account',
     ),
 
-    'rememberme'        => array(
-        'title'         => _t('Remember me'),
-        'description'   => _t('Days to remember login, 0 for disable.'),
-        'value'         => 14,
-        'filter'        => 'number_int',
-        'category'      => 'account',
-    ),
-
-    'attempts'      => array(
-        'title'         => _t('Maximum attempts'),
-        'description'   => _t('Maximum attempts allowed to try for user login'),
-        'value'         => 5,
-        'filter'        => 'number_int',
-        'category'      => 'account',
-    ),
-
-    'login_disable'     => array(
-        'title'         => _t('Login disable'),
-        'description'   => _t('Disable user login'),
-        'edit'          => 'checkbox',
-        'value'         => 0,
-        'filter'        => 'number_int',
-        'category'      => 'account',
-    ),
-
-    'register_disable'  => array(
-        'title'         => _t('Register disable'),
-        'description'   => _t('Disable user registration'),
-        'edit'          => 'checkbox',
-        'value'         => 0,
-        'filter'        => 'number_int',
-        'category'      => 'account',
-    ),
-
-    'login_captcha'       => array(
-        'title'         => _t('Login CAPTCHA'),
-        'description'   => _t('Enable CAPTCHA for user login'),
-        'edit'          => 'checkbox',
-        'value'         => 0,
-        'filter'        => 'number_int',
-        'category'      => 'account',
-    ),
-
-    'register_captcha'  => array(
-        'title'         => _t('Register CAPTCHA'),
-        'description'   => _t('Enable CAPTCHA for user registration'),
-        'edit'          => 'checkbox',
-        'value'         => 1,
-        'filter'        => 'number_int',
-        'category'      => 'account',
-    ),
-    
     // Avatar
     // Allowed width of avatar image, 0 for no limit
     'max_avatar_width'  => array(

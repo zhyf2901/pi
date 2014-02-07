@@ -9,9 +9,9 @@
 
 /**
 * User register form config
-*
-* @author Liu Chuang <liuchuang@eefocus.com>
 */
+
+$captchaEnable = Pi::user()->config('register_captcha');
 
 return array(
     // Use user module field
@@ -23,17 +23,17 @@ return array(
     // Custom field
     'credential-confirm' => array(
         'element' => array(
-            'name'          => 'credential-confirm',
+            //'name'          => 'credential-confirm',
             'options'       => array(
                 'label' => _a('Confirm credential'),
             ),
             'attributes'    => array(
                 'type'  => 'password',
-            )
+            ),
         ),
 
         'filter' => array(
-            'name'          => 'credential-confirm',
+            //'name'          => 'credential-confirm',
             'required'      => true,
             'filters'       => array(
                 array(
@@ -52,16 +52,15 @@ return array(
         ),
     ),
 
-    'captcha' => array(
+    'captcha' => !$captchaEnable ? false : array(
         'element' => array(
-            'name'          => 'captcha',
+            //'name'          => 'captcha',
             'type'          => 'captcha',
             'options'       => array(
                 'label'     => _a('Please type the word.'),
                 'separator'         => '<br />',
                 'captcha_position'  => 'append',
-            )
+            ),
         ),
-        'filter'  => array(),
     ),
 );
