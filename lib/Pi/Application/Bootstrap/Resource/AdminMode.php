@@ -61,18 +61,27 @@ class AdminMode extends AbstractResource
         $route = $e->getRouteMatch();
         if (empty($_SESSION['PI_BACKOFFICE']['changed']) && $route) {
             $mode       = static::MODE_ACCESS;
+
             $module     = $route->getParam('module');
             $controller = $route->getParam('controller');
             if ('system' == $module) {
                 $controllerClass = 'Module\System\Controller\Admin\\'
                                  . ucfirst($controller) . 'Controller';
-                if (is_subclass_of(
-                    $controllerClass,
-                    'Module\System\Controller\ComponentController'
-                )) {
+                /*
+                 * @FIXME `is_subclass_of` does not call __autoload in case if first argument is an object.
+                 *  If first argument is string, PHP will call __autoload.
+                 *  However, it seems __autoload is not called although the first argument is string.
+                 */
+                if (class_exists('Module\System\Controller\ComponentController')
+                    && is_subclass_of(
+                        $controllerClass,
+                        'Module\System\Controller\ComponentController'
+                    )
+                ) {
                     $mode = static::MODE_ADMIN;
                 }
             }
+
             $_SESSION['PI_BACKOFFICE']['mode'] = $mode;
         } else {
             $_SESSION['PI_BACKOFFICE']['changed'] = 0;

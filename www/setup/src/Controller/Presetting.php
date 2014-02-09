@@ -20,7 +20,7 @@ class Presetting extends AbstractController
 {
     public function init()
     {
-        $this->wizard->destroyPersist();
+        //$this->wizard->destroyPersist();
     }
 
     public function submitAction()
@@ -53,62 +53,57 @@ class Presetting extends AbstractController
 
     protected function loadLanguageForm()
     {
-        $languageList = $this->wizard->getLanguages();
         $locale = $this->wizard->getLocale();
+        $languageList = $this->wizard->getLanguages();
 
-        $title = _s('Language Selection');
-        $caption = _s('Choose the language for the installation and website.');
-        $content = '<div class="well"><h2>'
-                 . $title
-                 . '</h2><p class="caption">'
-                 . $caption
-                 . '</p>'
-                 . '<div class="install-form"><p>'
-                 . '<select id="language-selector" size="5" name="language">';
+        $listPattern =<<<'EOT'
+<li class="list-group-item language-picker">
+    <input type="radio" name="language" value="%s"%s>
+    <img src="%s" alt="%s" title="%s" style="padding: 0 5px;" />
+     %s
+</li>
+EOT;
+
+        $languageString = '<ul class="list-group">';
         foreach ($languageList as $name => $language) {
-            $selected = ($name == $locale) ? ' selected="selected"' : '';
-            $content .= sprintf(
-                '<option value="%s"%s>%s</option>',
+            $languageString .= sprintf(
+                $listPattern,
                 $name,
-                $selected,
+                $name == $locale ? ' checked' : '',
+                $language['icon'],
+                $language['title'],
+                $language['title'],
                 $language['title']
             );
         }
-        $content .= '</select></p></div></div>';
+        $languageString .= '</ul>';
+
+        $title      = _s('Language Selection');
+        $caption    = _s('Choose the language for the installation and website.');
+        $groupPattern =<<<'EOT'
+<div class="well">
+    <h2>%s</h2>
+    <p class="caption">%s</p>
+    <div class="install-form">%s</div>
+</div>
+EOT;
+        $content = sprintf(
+            $groupPattern,
+            $title,
+            $caption,
+            $languageString
+        );
         $this->content .= $content;
 
-        $this->headContent .=<<<'STYLE'
-<style type="text/css" media="screen">
-    #language-selector {
-        width: 300px;
-        margin: 10px auto;
-        border: 1px solid #ddd;
-    }
-
-    #language-selector li {
-        margin: 0;
-        list-style: none;
-        cursor: pointer;
-    }
-
-    #language-selector .ui-selecting {
-        background: #ccc;
-    }
-
-    #language-selector .ui-selected {
-        background: #999;
-        color: #fff;
-    }
-</style>
-STYLE;
-
         $this->footContent .=<<<"SCRIPT"
-<script type="text/javascript">
-$("#language-selector").change(function () {
-    $.ajax({
-        url: "{$_SERVER['PHP_SELF']}",
-        data: { page: "presetting", language: this.value, action: "submit" },
-        success: function() { window.location.reload(true); }
+<script>
+$(document).ready(function() {
+    $('input[type=radio][name=language]').change(function() {
+        $.ajax({
+            url: "{$_SERVER['PHP_SELF']}",
+            data: { page: "presetting", language: this.value, action: "submit" },
+            success: function (data) { window.location.reload(true); }
+        });
     });
 });
 </script>
@@ -329,7 +324,7 @@ SCRIPT;
             if (function_exists('apache_get_modules')) {
                 $modules = apache_get_modules();
                 if (!in_array('mod_rewrite', $modules)) {
-                    $status = -1;
+                    $status = 0;
                 }
             } elseif (getenv('HTTP_MOD_REWRITE') != 'On') {
                 ob_start();
