@@ -28,8 +28,22 @@ class IndexController extends ActionController
      */
     public function loginAction()
     {
-        $redirect = Pi::url($this->params('redirect', Pi::url('www')), true);
-        Pi::service('authentication')->login(array('redirect' => $redirect));
+        $urlRedirect    = Pi::url($this->params('redirect', Pi::url('www')), true);
+        $urlTrigger     = Pi::service('url')->assemble(
+            '',
+            array(
+                'module'     => $this->getModule(),
+                'controller' => 'index',
+                'action'     => 'trigger',
+            ),
+            array(
+                'query'      => array(
+                    'redirect'   => $urlRedirect,
+                ),
+            )
+        );
+
+        Pi::service('authentication')->login(array('redirect' => $urlTrigger));
     }
 
     /**
@@ -110,6 +124,18 @@ EOT;
 
         require_once Pi::path('vendor') . '/simplesamlphp/lib/_autoload.php';
         require_once Pi::path('vendor') . '/simplesamlphp/modules/saml/www/sp/saml2-logout.php';
+    }
+
+    /**
+     * trigger user-login event
+     */
+    protected function triggerAction()
+    {
+        $data = Pi::service('authentication')->getData();
+        if ($data['id']) {
+            Pi::service('event')->trigger('user-user_login', array('uid'=>$data['id']));
+        }
+        Pi::service('url')->redirect($this->params('redirect'));
     }
 
     /**

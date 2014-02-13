@@ -142,7 +142,7 @@ class Doc extends AbstractApi
                     $this->module
                 );
                 if ($maxSize) {
-                    $uploader->setSize($maxSize);
+                    $uploader->setSize($maxSize * 1024);
                 }
                 $result = $uploader->isValid();
                 if ($result) {
@@ -284,7 +284,7 @@ class Doc extends AbstractApi
     }
     
     /**
-     * Get attributes of medias
+     * Get attributes of media resources
      * 
      * @param int[] $ids
      * @param string|string[] $attribute
