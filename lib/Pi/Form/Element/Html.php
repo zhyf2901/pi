@@ -10,31 +10,20 @@
 
 namespace Pi\Form\Element;
 
+use Zend\Form\Element;
+
 /**
- * Custom Textarea element with custom editor
+ * Element to render html code w/o input
  *
- * {@inheritDoc}
  * @author Taiwen Jiang <taiwenjiang@tsinghua.org.cn>
  */
-class Editor extends Textarea
+class Html extends Element
 {
     /**
      * Seed attributes
      * @var array
      */
     protected $attributes = array(
-        'type'  => 'editor',
+        'type'  => 'html',
     );
-
-    /**
-     * {@inheritDoc}
-     */
-    public function getLabel()
-    {
-        if (null === $this->label) {
-            $this->label = __('Text editor');
-        }
-
-        return parent::getLabel();
-    }
 }
