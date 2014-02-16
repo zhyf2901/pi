@@ -457,25 +457,47 @@ class Asset extends AbstractService
      * as well as module assets for the theme
      *
      * @param string $theme
+     * @param string $target Publish to a specified theme
      *
      * @return bool
      */
-    public function publishTheme($theme)
+    public function publishTheme($theme, $target = '')
     {
         // Initialize erroneous file list
         $this->setErrors();
 
         $result = true;
 
+        $config = Pi::service('theme')->loadConfig($theme);
+        $errors = array();
+        if (!empty($config['parent'])) {
+            $this->publishTheme($config['parent'], $theme);
+            $errors = array_merge($errors, $this->getErrors());
+            $this->setErrors($errors);
+        }
+
         // Publish original assets
         $component  = 'theme/' . $theme;
-        $hasCustom  = $this->hasCustom($component);
-        $hasCustom  = $this->hasModule($component, $hasCustom);
+        // Disable symbolic link for inherited assets
+        if (!empty($target) || !empty($config['parent'])) {
+            $hasCustom = array(
+                static::DIR_ASSET   => true,
+                static::DIR_PUBLIC  => true,
+            );
+        } else {
+            $hasCustom  = $this->hasCustom($component);
+            $hasCustom  = $this->hasModule($component, $hasCustom);
+        }
 
-        $status     = $this->publish($component, '', null, $hasCustom);
+        $targetTheme = $target ? 'theme/' . $target : '';
+        $status = $this->publish($component, $targetTheme, null, $hasCustom);
         if (!$status) {
             $result = $status;
         }
+        if ($target != $theme) {
+            return $result;
+        }
+
         // Publish custom assets
         $status = $this->publishCustom($component);
         if (!$status) {

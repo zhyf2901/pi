@@ -20,13 +20,17 @@ $this->headLink(array(
     'rel'   => 'shortcut icon',
     'href'  => $this->favicon()
 ));
+// Load google analytics code
+$this->ga();
+
+$module = Pi::service('module')->current();
 ?>
 <!DOCTYPE HTML>
 <html lang="<?php echo $locale ?>">
 <head>
     <meta charset="<?php echo $charset; ?>">
 </head>
-<body id="pi-<?php echo Pi::service('module')->current(); ?>" class="pi-locale-<?php echo $locale; ?>">
+<body id="pi-<?php echo $module; ?>" class="pi-locale-<?php echo $locale; ?>">
    <!-- Header: brand, slogan, user bar -->
     <div class="navbar navbar-inverse" role="navigation">
         <div class="container">
@@ -50,29 +54,42 @@ $this->headLink(array(
 
         <!-- Module content starts -->
         <?php if (!empty($content)) { ?>
-            <div class="pi-module-content"><?php echo $content; ?></div>
+            <div class="pi-module-content" ng-app="<?php echo $module; ?>">
+                <?php echo $content; ?>
+            </div>
         <?php } ?>
         <!-- Module content ends -->
+
     </div>
 
     <!-- Footer: sitelink -->
-    <div class="pi-footer">
-        <div class="container pi-footer-container">
-            <div class="text-center">
-                <a rel="license" href="<?php echo Pi::url('www'); ?>" title="<?php echo _escape($sitename); ?>">
-                    &copy; <?php echo date('Y') . ' ' . _escape($sitename); ?>
-                </a>
-                <a rel="license" href="http://www.pialog.org" title="Pi Engine" target="_blank">
-                    Powered by Pi Engine
-                </a>
-                <a rel="license" href="http://www.pialog.org" title="Pi Engine" target="_blank">
-                    Design of Pi Engine
-                </a>
-                <span title="<?php _e('Execution time'); ?>">
-                    <?php printf('%.4fs', microtime(true) - Pi::startTime()); ?>
-                </span>
-            </div>    
-        </div>    
-    </div>
+   <!-- Footer: sitelink -->
+   <div class="pi-footer text-center">
+       <div class="container">
+           <ul class="pi-footer-links muted">
+               <li>
+                   <a href="<?php echo Pi::url('www'); ?>" title="<?php echo _escape($sitename); ?>">
+                       &copy; <?php echo date('Y') . ' ' . _escape($sitename); ?>
+                   </a>
+               </li>
+               <li>·</li>
+               <li>
+                   <a href="http://www.pialog.org" title="Pi Engine" target="_blank">
+                       Powered by Pi Engine
+                   </a>
+               </li>
+               <li>·</li>
+               <li>
+                   <a rel="license" href="http://www.pialog.org" title="Pi Engine" target="_blank">
+                       Design of Pi Engine
+                   </a>
+               </li>
+               <li>·</li>
+
+
+               <i class="fa fa-spinner fa-spin" title="<?php echo sprintf(__('Execution time: %.4f s'), microtime(true) - Pi::startTime()); ?>"></i>
+           </ul>
+       </div>
+   </div>
 </body>
 </html>

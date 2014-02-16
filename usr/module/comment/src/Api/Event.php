@@ -7,25 +7,24 @@
  * @license         http://pialog.org/license.txt New BSD License
  */
 
-namespace Module\Comment;
+namespace Module\Comment\Api;
 
 use Pi;
-use Pi\Db\RowGateway\RowGateway;
+use Pi\Application\Api\AbstractApi;
 
 /**
  * Comment Event Handler
  *
  * @author Taiwen Jiang <taiwenjiang@tsinghua.org.cn>
  */
-class Event
+class Event extends AbstractApi
 {
     /**
      * Comment post submission
      *
      * @param int $id
-     * @param string $module
      */
-    public static function postsubmit($id, $module)
+    public function postsubmit($id)
     {
         return;
     }
@@ -34,9 +33,8 @@ class Event
      * Comment post publish
      *
      * @param int $id
-     * @param string $module
      */
-    public static function postpublish($id, $module)
+    public function postpublish($id)
     {
         // Clear cache for leading comments
         Pi::service('comment')->clearCache($id);
@@ -51,9 +49,8 @@ class Event
      * Comment post update
      *
      * @param int $id
-     * @param string $module
      */
-    public static function postupdate($id, $module)
+    public function postupdate($id)
     {
         // Clear cache for leading comments
         Pi::service('comment')->clearCache($id);
@@ -65,9 +62,8 @@ class Event
      * Comment post enable
      *
      * @param int|int[] $id
-     * @param string $module
      */
-    public static function postenable($id, $module)
+    public function postenable($id)
     {
         // Clear cache for leading comments
         Pi::service('comment')->clearCache($id);
@@ -88,9 +84,8 @@ class Event
      * Comment post disable
      *
      * @param int|int[] $id
-     * @param string $module
      */
-    public static function postdisable($id, $module)
+    public function postdisable($id)
     {
         // Clear cache for leading comments
         Pi::service('comment')->clearCache($id);
@@ -102,9 +97,8 @@ class Event
      * Comment post delete
      *
      * @param int|int[] $root
-     * @param string $module
      */
-    public static function postdelete($root, $module)
+    public function postdelete($root)
     {
         Pi::service('comment')->clearCache($root, true);
 
