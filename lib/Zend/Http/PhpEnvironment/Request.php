@@ -60,10 +60,8 @@ class Request extends HttpRequest
      * Construct
      * Instantiates request.
      */
-    public function __construct($allowCustomMethods = true)
+    public function __construct()
     {
-        $this->setAllowCustomMethods($allowCustomMethods);
-
         $this->setEnv(new Parameters($_ENV));
 
         if ($_GET) {

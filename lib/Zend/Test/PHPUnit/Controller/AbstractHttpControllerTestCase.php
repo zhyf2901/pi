@@ -94,7 +94,7 @@ abstract class AbstractHttpControllerTestCase extends AbstractControllerTestCase
         $responseHeader = $this->getResponseHeader($header);
         if (!$responseHeader) {
             throw new PHPUnit_Framework_ExpectationFailedException(sprintf(
-                'Failed asserting response header, header "%s" doesn\'t exist',
+                'Failed asserting response header, header "%s" do not exists',
                 $header
             ));
         }
@@ -135,7 +135,7 @@ abstract class AbstractHttpControllerTestCase extends AbstractControllerTestCase
         $responseHeader = $this->getResponseHeader($header);
         if (!$responseHeader) {
             throw new PHPUnit_Framework_ExpectationFailedException(sprintf(
-                'Failed asserting response header, header "%s" doesn\'t exist',
+                'Failed asserting response header, header "%s" do not exists',
                 $header
             ));
         }
@@ -168,7 +168,7 @@ abstract class AbstractHttpControllerTestCase extends AbstractControllerTestCase
         $responseHeader = $this->getResponseHeader($header);
         if (!$responseHeader) {
             throw new PHPUnit_Framework_ExpectationFailedException(sprintf(
-                'Failed asserting response header, header "%s" doesn\'t exist',
+                'Failed asserting response header, header "%s" do not exists',
                 $header
             ));
         }
@@ -210,7 +210,7 @@ abstract class AbstractHttpControllerTestCase extends AbstractControllerTestCase
         $responseHeader = $this->getResponseHeader($header);
         if (!$responseHeader) {
             throw new PHPUnit_Framework_ExpectationFailedException(sprintf(
-                'Failed asserting response header, header "%s" doesn\'t exist',
+                'Failed asserting response header, header "%s" do not exists',
                 $header
             ));
         }
@@ -682,30 +682,22 @@ abstract class AbstractHttpControllerTestCase extends AbstractControllerTestCase
     private function queryContentContainsAssertion($path, $match, $useXpath = false)
     {
         $result = $this->query($path, $useXpath);
-
         if ($result->count() == 0) {
             throw new PHPUnit_Framework_ExpectationFailedException(sprintf(
                 'Failed asserting node DENOTED BY %s EXISTS',
                 $path
             ));
         }
-
-        $nodeValues = array();
-
         foreach ($result as $node) {
             if ($node->nodeValue == $match) {
                 $this->assertEquals($match, $node->nodeValue);
                 return;
             }
-
-            $nodeValues[] = $node->nodeValue;
         }
-
         throw new PHPUnit_Framework_ExpectationFailedException(sprintf(
-            'Failed asserting node denoted by %s CONTAINS content "%s", Contents: [%s]',
+            'Failed asserting node denoted by %s CONTAINS content "%s"',
             $path,
-            $match,
-            implode(',', $nodeValues)
+            $match
         ));
     }
 

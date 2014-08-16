@@ -120,6 +120,7 @@ interface AdapterInterface
         $bgColor = null
     );
 
+
     /**
      * Determine and return current console width.
      *
@@ -207,6 +208,7 @@ interface AdapterInterface
      * @return void
      */
     public function resetColor();
+
 
     /**
      * Set Console charset to use.

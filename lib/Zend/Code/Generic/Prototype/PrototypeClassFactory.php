@@ -11,6 +11,7 @@ namespace Zend\Code\Generic\Prototype;
 
 use Zend\Code\Reflection\Exception;
 
+
 /**
  * This is a factory for classes which are identified by name.
  *

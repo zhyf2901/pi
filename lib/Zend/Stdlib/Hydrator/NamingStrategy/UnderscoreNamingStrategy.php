@@ -13,15 +13,9 @@ use Zend\Filter\FilterChain;
 
 class UnderscoreNamingStrategy implements NamingStrategyInterface
 {
-    /**
-     * @var FilterChain|null
-     */
     protected static $camelCaseToUnderscoreFilter;
 
-    /**
-     * @var FilterChain|null
-     */
-    protected static $underscoreToStudlyCaseFilter;
+    protected static $underscoreToCamelCaseFilter;
 
     /**
      * Remove underscores and capitalize letters
@@ -31,7 +25,7 @@ class UnderscoreNamingStrategy implements NamingStrategyInterface
      */
     public function hydrate($name)
     {
-        return $this->getUnderscoreToStudlyCaseFilter()->filter($name);
+        return lcfirst($this->getUnderscoreToCamelCaseFilter()->filter($name));
     }
 
     /**
@@ -48,17 +42,16 @@ class UnderscoreNamingStrategy implements NamingStrategyInterface
     /**
      * @return FilterChain
      */
-    protected function getUnderscoreToStudlyCaseFilter()
+    protected function getUnderscoreToCamelCaseFilter()
     {
-        if (static::$underscoreToStudlyCaseFilter instanceof FilterChain) {
-            return static::$underscoreToStudlyCaseFilter;
+        if (static::$underscoreToCamelCaseFilter instanceof FilterChain) {
+            return static::$underscoreToCamelCaseFilter;
         }
 
         $filter = new FilterChain();
-
-        $filter->attachByName('WordUnderscoreToStudlyCase');
-
-        return static::$underscoreToStudlyCaseFilter = $filter;
+        $filter->attachByName('WordUnderscoreToCamelCase');
+        static::$underscoreToCamelCaseFilter = $filter;
+        return $filter;
     }
 
     /**
@@ -71,10 +64,9 @@ class UnderscoreNamingStrategy implements NamingStrategyInterface
         }
 
         $filter = new FilterChain();
-
         $filter->attachByName('WordCamelCaseToUnderscore');
         $filter->attachByName('StringToLower');
-
-        return static::$camelCaseToUnderscoreFilter = $filter;
+        static::$camelCaseToUnderscoreFilter = $filter;
+        return $filter;
     }
 }
